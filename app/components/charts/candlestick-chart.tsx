@@ -74,7 +74,7 @@ const CandlestickChart: React.FC<Props> = ({
       bearish: "#ef4444",
       sma: "#3b82f6",
       volume: isDark ? "#4b5563" : "#d1d5db",
-      volumeBar: isDark ? "#6b7280" : "#9ca3af",
+      volumeBar: isDark ? "#e2e8f0" : "#475569",
       crosshair: isDark ? "#fbbf24" : "#f59e0b",
       tooltip: isDark ? "#1f2937" : "#f9fafb",
       tooltipBorder: isDark ? "#374151" : "#e5e7eb",
@@ -261,8 +261,8 @@ const CandlestickChart: React.FC<Props> = ({
         .attr("y", (d) => volumeScale(d.volume || 0))
         .attr("width", x.bandwidth())
         .attr("height", (d) => chartHeight - volumeScale(d.volume || 0))
-        .attr("fill", colors.volumeBar)
-        .attr("opacity", 0.3);
+        .attr("fill", (d) => d.close > d.open ? colors.bullish : colors.bearish)
+        .attr("opacity", 0.5);
     }
 
     // Candlestick wicks

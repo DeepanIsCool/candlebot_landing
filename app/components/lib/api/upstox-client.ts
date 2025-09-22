@@ -1,13 +1,5 @@
-import UpstoxClient from "upstox-js-sdk"
-
-export interface UpstoxCandle {
-  timestamp: string
-  open: number
-  high: number
-  low: number
-  close: number
-  volume: number
-}
+// Upstox V3 API - No authentication required for historical data
+// API Documentation: https://upstox.com/developer/api-documentation/v3/get-historical-candle-data
 
 export interface CandleData {
   date: string
@@ -24,7 +16,16 @@ export interface StockInfo {
   instrumentKey: string
 }
 
-// Common stock symbols with their instrument keys
+// Upstox V3 API Response format
+interface UpstoxV3Response {
+  status: string
+  data: {
+    candles: Array<[string, number, number, number, number, number, number]> // [timestamp, open, high, low, close, volume, oi]
+  }
+}
+
+// Common stock symbols with their correct instrument keys
+// These are verified working instrument keys from Upstox V3 API
 export const POPULAR_STOCKS: StockInfo[] = [
   {
     symbol: "RELIANCE",
@@ -49,181 +50,282 @@ export const POPULAR_STOCKS: StockInfo[] = [
   {
     symbol: "ICICIBANK",
     name: "ICICI Bank Ltd",
-    instrumentKey: "NSE_EQ|INE090A01013"
+    instrumentKey: "NSE_EQ|INE090A01021"  // Corrected ISIN
+  },
+  {
+    symbol: "SBIN",
+    name: "State Bank of India",
+    instrumentKey: "NSE_EQ|INE062A01020"
+  },
+  {
+    symbol: "BHARTIARTL",
+    name: "Bharti Airtel Ltd",
+    instrumentKey: "NSE_EQ|INE397D01024"
   }
 ]
 
-// Interval mappings for different timeframes
+// Upstox V3 API interval mappings - Based on API limitations
 export const INTERVAL_CONFIG = {
-  "1m": { interval: "minute", amount: "1" },
-  "5m": { interval: "minute", amount: "5" },
-  "15m": { interval: "minute", amount: "15" },
-  "30m": { interval: "minute", amount: "30" },
-  "1h": { interval: "hour", amount: "1" },
-  "1D": { interval: "day", amount: "1" },
-  "1W": { interval: "week", amount: "1" },
-  "1M": { interval: "month", amount: "1" }
+  "5m": { unit: "minutes", value: "5" },    // 5-minute intervals
+  "15m": { unit: "minutes", value: "15" },  // 15-minute intervals
+  "30m": { unit: "minutes", value: "30" },  // 30-minute intervals
+  "1h": { unit: "hours", value: "1" },      // 1-hour intervals
+  "1D": { unit: "days", value: "1" },       // Daily intervals
+  "1W": { unit: "weeks", value: "1" },      // Weekly intervals
+  "1M": { unit: "months", value: "1" }      // Monthly intervals
 }
 
-// Transform Upstox response to our candle format
-function transformUpstoxData(upstoxData: any[]): CandleData[] {
-  if (!upstoxData || !Array.isArray(upstoxData)) {
+// Transform Upstox V3 API response to our candle format
+function transformUpstoxV3Data(candles: Array<[string, number, number, number, number, number, number]>): CandleData[] {
+  if (!candles || !Array.isArray(candles)) {
+    console.warn('Invalid Upstox V3 candle data format:', candles)
     return []
   }
 
-  return upstoxData.map((candle) => {
-    // Upstox returns data as [timestamp, open, high, low, close, volume, oi]
-    const [timestamp, open, high, low, close, volume] = candle
-    
-    return {
-      date: new Date(timestamp).toISOString().split('T')[0],
-      open: parseFloat(open),
-      high: parseFloat(high),
-      low: parseFloat(low),
-      close: parseFloat(close),
-      volume: parseInt(volume) || 0
+  console.log(`📊 Processing ${candles.length} candles from Upstox V3 API`)
+
+  const transformedData = candles.map((candle, index) => {
+    try {
+      // Upstox V3 returns data as [timestamp, open, high, low, close, volume, oi]
+      const [timestamp, open, high, low, close, volume] = candle
+      
+      // Parse timestamp - Upstox V3 returns ISO format like "2024-09-22T09:15:00+05:30"
+      const date = new Date(timestamp).toISOString().split('T')[0]
+      
+      const candleData: CandleData = {
+        date,
+        open: parseFloat(open.toString()),
+        high: parseFloat(high.toString()),
+        low: parseFloat(low.toString()),
+        close: parseFloat(close.toString()),
+        volume: parseInt(volume.toString())
+      }
+      
+      // Validate candle data integrity
+      if (candleData.high < candleData.low) {
+        console.warn(`⚠️ Invalid candle at index ${index}: high (${candleData.high}) < low (${candleData.low})`)
+        return null
+      }
+      
+      if (candleData.open < candleData.low || candleData.open > candleData.high) {
+        console.warn(`⚠️ Invalid candle at index ${index}: open (${candleData.open}) outside range [${candleData.low}, ${candleData.high}]`)
+        return null
+      }
+      
+      if (candleData.close < candleData.low || candleData.close > candleData.high) {
+        console.warn(`⚠️ Invalid candle at index ${index}: close (${candleData.close}) outside range [${candleData.low}, ${candleData.high}]`)
+        return null
+      }
+      
+      return candleData
+    } catch (error) {
+      console.error(`❌ Error transforming candle at index ${index}:`, error, candle)
+      return null
     }
-  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  }).filter((candle): candle is CandleData => candle !== null)
+
+  const sortedData = transformedData.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  console.log(`✅ Successfully processed ${sortedData.length} valid candles`)
+  
+  return sortedData
 }
 
-// Get date range based on interval
+// Get date range based on interval for Upstox V3 API
 function getDateRange(interval: string): { fromDate: string; toDate: string } {
   const today = new Date()
-  const toDate = today.toISOString().split('T')[0]
   
-  let fromDate: string
+  // Use previous trading day if today is weekend or after market hours
+  const dayOfWeek = today.getDay()
+  let toDate: string
+  
+  if (dayOfWeek === 0) { // Sunday
+    today.setDate(today.getDate() - 2) // Friday
+  } else if (dayOfWeek === 6) { // Saturday
+    today.setDate(today.getDate() - 1) // Friday
+  }
+  
+  toDate = today.toISOString().split('T')[0]
+  
+  // Upstox V3 API limitations and optimal ranges
   const daysBack = {
-    "1m": 1,
-    "5m": 1,
-    "15m": 5,
-    "30m": 10,
-    "1h": 30,
-    "1D": 365,
-    "1W": 730,
-    "1M": 1095
+    "5m": 3,     // 5-minute: 3 days (limited historical data for minutes)
+    "15m": 7,    // 15-minute: 1 week
+    "30m": 15,   // 30-minute: 2 weeks
+    "1h": 30,    // 1-hour: 1 month
+    "1D": 100,   // 1-day: 100 trading days
+    "1W": 730,   // 1-week: 2 years
+    "1M": 1095   // 1-month: 3 years
   }
   
   const days = daysBack[interval as keyof typeof daysBack] || 30
   const from = new Date(today)
   from.setDate(from.getDate() - days)
-  fromDate = from.toISOString().split('T')[0]
+  const fromDate = from.toISOString().split('T')[0]
   
+  console.log(`📅 Date range: ${fromDate} to ${toDate}`)
   return { fromDate, toDate }
 }
 
-// Fetch historical candle data
+// Fetch historical candle data using Upstox V3 API (no authentication required)
 export async function fetchHistoricalData(
   instrumentKey: string,
   interval: string = "1D"
 ): Promise<CandleData[]> {
   try {
-    const historyApi = new UpstoxClient.HistoricalApiV3()
+    console.log(`🔄 Fetching historical data from Upstox V3 API for ${instrumentKey}, interval: ${interval}`)
+    
     const config = INTERVAL_CONFIG[interval as keyof typeof INTERVAL_CONFIG] || INTERVAL_CONFIG["1D"]
     const { fromDate, toDate } = getDateRange(interval)
-
-    console.log(`Fetching historical data for ${instrumentKey}, interval: ${interval}, from: ${fromDate}, to: ${toDate}`)
-
-    const response = await historyApi.getHistoricalCandleV3(
-      instrumentKey,
-      config.interval,
-      config.amount,
-      fromDate,
-      toDate
-    )
-
-    if (response && response.data && response.data.candles) {
-      return transformUpstoxData(response.data.candles)
+    
+    // Construct Upstox V3 API URL
+    // Format: https://api.upstox.com/v3/historical-candle/{instrument_key}/{unit}/{value}/{to_date}/{from_date}
+    const encodedInstrumentKey = encodeURIComponent(instrumentKey)
+    const url = `https://api.upstox.com/v3/historical-candle/${encodedInstrumentKey}/${config.unit}/${config.value}/${toDate}/${fromDate}`
+    
+    console.log(`📡 API URL: ${url}`)
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`❌ HTTP ${response.status}: ${response.statusText}`, errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
-
-    return []
+    
+    const data: UpstoxV3Response = await response.json()
+    
+    // Check for API-level errors
+    if (data.status === 'error') {
+      const errorMsg = (data as any).errors?.[0]?.message || 'Unknown API error'
+      console.error(`❌ Upstox API Error:`, errorMsg)
+      throw new Error(`Upstox API Error: ${errorMsg}`)
+    }
+    
+    if (data.status === 'success' && data.data && data.data.candles) {
+      console.log(`✅ Successfully fetched ${data.data.candles.length} historical candles from Upstox V3`)
+      return transformUpstoxV3Data(data.data.candles)
+    }
+    
+    console.warn("⚠️ No candle data in Upstox V3 response or status not success")
+    throw new Error('No candle data available')
+    
   } catch (error) {
-    console.error("Error fetching historical candle data:", error)
-    // Return mock data for development/testing
-    return generateMockData(interval)
+    console.error(`❌ Failed to fetch historical data from Upstox V3:`, error)
+    throw error // Re-throw to let caller handle
   }
 }
 
-// Fetch intraday candle data
+// Fetch intraday candle data using Upstox V3 API (no authentication required)
 export async function fetchIntradayData(
   instrumentKey: string,
-  interval: string = "1m"
+  interval: string = "5m"
 ): Promise<CandleData[]> {
   try {
-    const intradayApi = new UpstoxClient.IntradayApiV3()
-    const config = INTERVAL_CONFIG[interval as keyof typeof INTERVAL_CONFIG] || INTERVAL_CONFIG["1m"]
-
-    console.log(`Fetching intraday data for ${instrumentKey}, interval: ${interval}`)
-
-    const response = await intradayApi.getIntradayCandleV3(
-      instrumentKey,
-      config.interval,
-      config.amount
-    )
-
-    if (response && response.data && response.data.candles) {
-      return transformUpstoxData(response.data.candles)
+    console.log(`🔄 Fetching intraday data from Upstox V3 API for ${instrumentKey}, interval: ${interval}`)
+    
+    const config = INTERVAL_CONFIG[interval as keyof typeof INTERVAL_CONFIG] || INTERVAL_CONFIG["5m"]
+    
+    // For intraday, we use today's date
+    const today = new Date().toISOString().split('T')[0]
+    
+    // Construct Upstox V3 API URL for intraday
+    const encodedInstrumentKey = encodeURIComponent(instrumentKey)
+    const url = `https://api.upstox.com/v3/historical-candle/${encodedInstrumentKey}/${config.unit}/${config.value}/${today}/${today}`
+    
+    console.log(`📡 Intraday API URL: ${url}`)
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`❌ HTTP ${response.status}: ${response.statusText}`, errorText)
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`)
     }
-
-    return []
+    
+    const data: UpstoxV3Response = await response.json()
+    
+    // Check for API-level errors
+    if (data.status === 'error') {
+      const errorMsg = (data as any).errors?.[0]?.message || 'Unknown API error'
+      console.error(`❌ Upstox API Error:`, errorMsg)
+      throw new Error(`Upstox API Error: ${errorMsg}`)
+    }
+    
+    if (data.status === 'success' && data.data && data.data.candles) {
+      console.log(`✅ Successfully fetched ${data.data.candles.length} intraday candles from Upstox V3`)
+      return transformUpstoxV3Data(data.data.candles)
+    }
+    
+    console.warn("⚠️ No intraday candle data in Upstox V3 response")
+    throw new Error('No intraday candle data available')
+    
   } catch (error) {
-    console.error("Error fetching intraday candle data:", error)
-    // Return mock data for development/testing
-    return generateMockData(interval)
+    console.error(`❌ Failed to fetch intraday data from Upstox V3:`, error)
+    throw error // Re-throw to let caller handle
   }
 }
 
-// Get stock data based on interval type
+// Get stock data based on interval type using Upstox V3 API
 export async function getStockData(
   instrumentKey: string,
   interval: string = "1D"
 ): Promise<CandleData[]> {
-  // Use intraday API for minute and hour intervals
-  if (["1m", "5m", "15m", "30m", "1h"].includes(interval)) {
-    return await fetchIntradayData(instrumentKey, interval)
-  }
+  console.log(`📈 Getting stock data for ${instrumentKey} with ${interval} interval`)
   
-  // Use historical API for daily, weekly, monthly intervals
-  return await fetchHistoricalData(instrumentKey, interval)
+  try {
+    // For intraday intervals (minutes and hours), use historical API with same day
+    if (["5m", "15m", "30m", "1h"].includes(interval)) {
+      return await fetchIntradayData(instrumentKey, interval)
+    }
+    
+    // For daily, weekly, monthly intervals, fetch historical data
+    return await fetchHistoricalData(instrumentKey, interval)
+  } catch (error) {
+    console.error(`❌ Failed to get stock data for ${instrumentKey}:`, error)
+    // Return empty array instead of mock data as requested
+    return []
+  }
 }
 
-// Mock data generator for development/testing
-function generateMockData(interval: string): CandleData[] {
-  const days = {
-    "1m": 1,
-    "5m": 1,
-    "15m": 5,
-    "30m": 10,
-    "1h": 30,
-    "1D": 100,
-    "1W": 52,
-    "1M": 24
+// Get Last Traded Price (LTP) from the latest candle data
+export function getLTPFromData(data: CandleData[]): number {
+  if (!data || data.length === 0) {
+    return 0
   }
   
-  const numCandles = days[interval as keyof typeof days] || 30
-  const mockData: CandleData[] = []
-  let basePrice = 1000 + Math.random() * 2000
+  // Sort by date to get the most recent candle
+  const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const latestCandle = sortedData[0]
   
-  for (let i = 0; i < numCandles; i++) {
-    const date = new Date()
-    date.setDate(date.getDate() - (numCandles - i))
-    
-    const open = basePrice + (Math.random() - 0.5) * 20
-    const volatility = 5 + Math.random() * 15
-    const high = open + Math.random() * volatility
-    const low = open - Math.random() * volatility
-    const close = low + Math.random() * (high - low)
-    
-    mockData.push({
-      date: date.toISOString().split('T')[0],
-      open: parseFloat(open.toFixed(2)),
-      high: parseFloat(high.toFixed(2)),
-      low: parseFloat(low.toFixed(2)),
-      close: parseFloat(close.toFixed(2)),
-      volume: Math.floor(Math.random() * 1000000) + 100000
-    })
-    
-    basePrice = close
+  console.log(`📊 LTP from latest candle (${latestCandle.date}): ₹${latestCandle.close}`)
+  return latestCandle.close
+}
+
+// Get price change and percentage from data
+export function getPriceChangeFromData(data: CandleData[]): { change: number; changePercent: number } {
+  if (!data || data.length < 2) {
+    return { change: 0, changePercent: 0 }
   }
   
-  return mockData
+  const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const latestCandle = sortedData[0]
+  const previousCandle = sortedData[1]
+  
+  const change = latestCandle.close - previousCandle.close
+  const changePercent = (change / previousCandle.close) * 100
+  
+  console.log(`📈 Price change: ₹${change.toFixed(2)} (${changePercent.toFixed(2)}%)`)
+  return { change, changePercent }
 }

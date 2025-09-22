@@ -6,6 +6,8 @@ import CandlestickChart, {
 import {
   POPULAR_STOCKS,
   type StockInfo,
+  getLTPFromData,
+  getPriceChangeFromData,
 } from "@/app/components/lib/api/upstox-client";
 import { Badge } from "@/app/components/ui/badge";
 import { Button } from "@/app/components/ui/button";
@@ -36,7 +38,6 @@ import {
 import { useState } from "react";
 
 const timeframeOptions = [
-  { value: "1m", label: "1M" },
   { value: "5m", label: "5M" },
   { value: "15m", label: "15M" },
   { value: "30m", label: "30M" },

@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { getStockData, POPULAR_STOCKS, type CandleData, type StockInfo } from "../components/lib/api/upstox-client"
+import { getStockData, POPULAR_STOCKS, type CandleData, type StockInfo, getLTPFromData, getPriceChangeFromData } from "../components/lib/api/upstox-client"
 
 interface UseStockDataOptions {
   refreshInterval?: number // in milliseconds
@@ -102,7 +102,7 @@ export function useStockData(
     }
 
     // Only auto-refresh for intraday intervals
-    const isIntradayInterval = ["1m", "5m", "15m", "30m", "1h"].includes(currentInterval)
+    const isIntradayInterval = ["5m", "15m", "30m", "1h"].includes(currentInterval)
     if (isIntradayInterval && !loading) {
       setupAutoRefresh()
     }
@@ -141,16 +141,37 @@ export function useStockData(
 
 // Custom hook for getting current stock price and stats
 export function useStockStats(data: CandleData[]) {
+  if (!data || data.length === 0) {
+    return {
+      currentPrice: 0,
+      openPrice: 0,
+      highPrice: 0,
+      lowPrice: 0,
+      volume: 0,
+      change: 0,
+      changePercent: 0,
+      totalVolume: 0,
+      averageVolume: 0
+    }
+  }
+
+  // Use the new helper functions for accurate LTP and price change
+  const currentPrice = getLTPFromData(data)
+  const { change, changePercent } = getPriceChangeFromData(data)
+  
+  // Sort data by date to get the most recent candle
+  const sortedData = [...data].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const latestCandle = sortedData[0]
+  
   return {
-    currentPrice: data.length > 0 ? data[data.length - 1].close : 0,
-    openPrice: data.length > 0 ? data[data.length - 1].open : 0,
-    highPrice: data.length > 0 ? Math.max(...data.map(d => d.high)) : 0,
-    lowPrice: data.length > 0 ? Math.min(...data.map(d => d.low)) : 0,
-    volume: data.length > 0 ? data[data.length - 1].volume : 0,
-    change: data.length > 1 ? data[data.length - 1].close - data[data.length - 2].close : 0,
-    changePercent: data.length > 1 ? 
-      ((data[data.length - 1].close - data[data.length - 2].close) / data[data.length - 2].close) * 100 : 0,
+    currentPrice,
+    openPrice: latestCandle?.open || 0,
+    highPrice: Math.max(...data.map(d => d.high)),
+    lowPrice: Math.min(...data.map(d => d.low)),
+    volume: latestCandle?.volume || 0,
+    change,
+    changePercent,
     totalVolume: data.reduce((sum, d) => sum + d.volume, 0),
-    averageVolume: data.length > 0 ? data.reduce((sum, d) => sum + d.volume, 0) / data.length : 0
+    averageVolume: data.reduce((sum, d) => sum + d.volume, 0) / data.length
   }
 }
