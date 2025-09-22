@@ -1,11 +1,11 @@
-import { Navbar } from "@/components/layout/navbar";
-import { CalculatorSection } from "@/components/sections/calculator-section";
-import { FeaturesSection } from "@/components/sections/features-section";
-import { FooterSection } from "@/components/sections/footer-section";
-import { HeroBanner } from "@/components/sections/hero-banner";
-import { StockSection } from "@/components/sections/stock-section";
-import { TestimonialsSection } from "@/components/sections/testimonials-section";
-import { IntersectionObserver } from "@/components/ui/intersection-observer";
+import { Navbar } from "@/app/components/layout/navbar";
+import { CalculatorSection } from "@/app/components/sections/calculator-section";
+import { FeaturesSection } from "@/app/components/sections/features-section";
+import { FooterSection } from "@/app/components/sections/footer-section";
+import { HeroBanner } from "@/app/components/sections/hero-banner";
+import { StockSection } from "@/app/components/sections/stock-section";
+import { TestimonialsSection } from "@/app/components/sections/testimonials-section";
+import { IntersectionObserver } from "@/app/components/ui/intersection-observer";
 
 export default function HomePage() {
   return (
