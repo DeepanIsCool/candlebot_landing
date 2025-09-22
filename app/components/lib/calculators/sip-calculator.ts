@@ -43,6 +43,8 @@ export interface TaxConfig {
  * @param taxConfig - Optional tax configuration for Indian market
  * @returns SIPResult object with calculated values
  */
+
+// ADD TO FEAUTRE
 export const calculateSIPFutureValue = (
   principal = 0,
   monthlyInvestment: number,
@@ -173,6 +175,8 @@ const calculateIndianCapitalGainsTax = (
 /**
  * Enhanced tax-optimized SIP calculator with updated rules
  */
+
+// ADD TO FEATURES
 export const calculateTaxOptimizedSIP = (
   monthlyInvestment: number,
   annualRate: number,
@@ -245,6 +249,8 @@ export const calculateTaxOptimizedSIP = (
  * @param years - Investment duration in years
  * @returns Required monthly SIP amount
  */
+
+// ADD TO FEATURES
 export const calculateRequiredSIP = (
   targetAmount: number,
   principal = 0,
@@ -295,6 +301,8 @@ export const calculateRequiredSIP = (
  * @param taxConfig - Optional tax configuration
  * @returns Enhanced StepUpSIPResult with year-wise breakdown
  */
+
+// ADD TO FEATURES
 export const calculateStepUpSIP = (
   initialSIP: number,
   stepUpPercentage: number,
@@ -411,6 +419,7 @@ export const calculateStepUpSIP = (
  * @param existingSavings - Current savings towards this goal
  * @returns Goal-specific investment recommendation
  */
+// ADD TO FEATURES
 export const calculateGoalBasedSIP = (
   goalAmount: number,
   currentAge: number,
@@ -481,6 +490,8 @@ export const calculateGoalBasedSIP = (
  * @param years - Investment duration
  * @returns Comparison between SIP and lump sum investment
  */
+
+// ADD TO FEATURES
 export const compareSIPvsLumpSum = (
   amount: number,
   annualRate: number,
