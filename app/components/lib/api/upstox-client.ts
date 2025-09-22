@@ -1,5 +1,6 @@
-// Upstox V3 API - No authentication required for historical data
-// API Documentation: https://upstox.com/developer/api-documentation/v3/get-historical-candle-data
+// Upstox V3 API - Real API integration with proper intraday/historical endpoints
+// V3 Intraday API: https://upstox.com/developer/api-documentation/v3/get-intra-day-candle-data/
+// V3 Historical API: https://upstox.com/developer/api-documentation/v3/get-historical-candle-data/
 
 export interface CandleData {
   date: string
@@ -90,7 +91,9 @@ function transformUpstoxV3Data(candles: Array<[string, number, number, number, n
       const [timestamp, open, high, low, close, volume] = candle
       
       // Parse timestamp - Upstox V3 returns ISO format like "2024-09-22T09:15:00+05:30"
-      const date = new Date(timestamp).toISOString().split('T')[0]
+      // For intraday data, preserve the full timestamp; for daily data, use date only
+      const parsedDate = new Date(timestamp)
+      const date = timestamp.includes('T') ? parsedDate.toISOString() : parsedDate.toISOString().split('T')[0]
       
       const candleData: CandleData = {
         date,
@@ -166,23 +169,20 @@ function getDateRange(interval: string): { fromDate: string; toDate: string } {
   return { fromDate, toDate }
 }
 
-// Fetch historical candle data using Upstox V3 API (no authentication required)
+// Fetch historical candle data using our Next.js API route (avoids CORS)
 export async function fetchHistoricalData(
   instrumentKey: string,
   interval: string = "1D"
 ): Promise<CandleData[]> {
   try {
-    console.log(`🔄 Fetching historical data from Upstox V3 API for ${instrumentKey}, interval: ${interval}`)
+    console.log(`🔄 Fetching historical data via API route for ${instrumentKey}, interval: ${interval}`)
     
-    const config = INTERVAL_CONFIG[interval as keyof typeof INTERVAL_CONFIG] || INTERVAL_CONFIG["1D"]
     const { fromDate, toDate } = getDateRange(interval)
     
-    // Construct Upstox V3 API URL
-    // Format: https://api.upstox.com/v3/historical-candle/{instrument_key}/{unit}/{value}/{to_date}/{from_date}
-    const encodedInstrumentKey = encodeURIComponent(instrumentKey)
-    const url = `https://api.upstox.com/v3/historical-candle/${encodedInstrumentKey}/${config.unit}/${config.value}/${toDate}/${fromDate}`
+    // Use our Next.js API route to proxy the request
+    const url = `/api/stock-data?instrumentKey=${encodeURIComponent(instrumentKey)}&interval=${interval}&fromDate=${fromDate}&toDate=${toDate}`
     
-    console.log(`📡 API URL: ${url}`)
+    console.log(`📡 API Route URL: ${url}`)
     
     const response = await fetch(url, {
       method: 'GET',
@@ -208,37 +208,43 @@ export async function fetchHistoricalData(
     }
     
     if (data.status === 'success' && data.data && data.data.candles) {
-      console.log(`✅ Successfully fetched ${data.data.candles.length} historical candles from Upstox V3`)
+      console.log(`✅ Successfully fetched ${data.data.candles.length} historical candles via API route`)
       return transformUpstoxV3Data(data.data.candles)
     }
     
-    console.warn("⚠️ No candle data in Upstox V3 response or status not success")
+    console.warn("⚠️ No candle data in API response or status not success")
     throw new Error('No candle data available')
     
   } catch (error) {
-    console.error(`❌ Failed to fetch historical data from Upstox V3:`, error)
+    console.error(`❌ Failed to fetch historical data via API route:`, error)
     throw error // Re-throw to let caller handle
   }
 }
 
-// Fetch intraday candle data using Upstox V3 API (no authentication required)
+// Fetch intraday candle data using our Next.js API route (avoids CORS)
 export async function fetchIntradayData(
   instrumentKey: string,
   interval: string = "5m"
 ): Promise<CandleData[]> {
   try {
-    console.log(`🔄 Fetching intraday data from Upstox V3 API for ${instrumentKey}, interval: ${interval}`)
+    console.log(`🔄 Fetching intraday data via API route for ${instrumentKey}, interval: ${interval}`)
     
-    const config = INTERVAL_CONFIG[interval as keyof typeof INTERVAL_CONFIG] || INTERVAL_CONFIG["5m"]
+    // For intraday, we need to use a recent trading day, not necessarily today
+    const today = new Date()
+    let targetDate = new Date(today)
     
-    // For intraday, we use today's date
-    const today = new Date().toISOString().split('T')[0]
+    // Go back to find the most recent trading day (Monday-Friday)
+    while (targetDate.getDay() === 0 || targetDate.getDay() === 6) {
+      targetDate.setDate(targetDate.getDate() - 1)
+    }
     
-    // Construct Upstox V3 API URL for intraday
-    const encodedInstrumentKey = encodeURIComponent(instrumentKey)
-    const url = `https://api.upstox.com/v3/historical-candle/${encodedInstrumentKey}/${config.unit}/${config.value}/${today}/${today}`
+    const fromDate = targetDate.toISOString().split('T')[0]
+    const toDate = fromDate // Same day for intraday
     
-    console.log(`📡 Intraday API URL: ${url}`)
+    // Use our Next.js API route to proxy the request
+    const url = `/api/stock-data?instrumentKey=${encodeURIComponent(instrumentKey)}&interval=${interval}&fromDate=${fromDate}&toDate=${toDate}`
+    
+    console.log(`📡 Intraday API Route URL: ${url}`)
     
     const response = await fetch(url, {
       method: 'GET',
@@ -264,20 +270,20 @@ export async function fetchIntradayData(
     }
     
     if (data.status === 'success' && data.data && data.data.candles) {
-      console.log(`✅ Successfully fetched ${data.data.candles.length} intraday candles from Upstox V3`)
+      console.log(`✅ Successfully fetched ${data.data.candles.length} intraday candles via API route`)
       return transformUpstoxV3Data(data.data.candles)
     }
     
-    console.warn("⚠️ No intraday candle data in Upstox V3 response")
+    console.warn("⚠️ No intraday candle data in API response")
     throw new Error('No intraday candle data available')
     
   } catch (error) {
-    console.error(`❌ Failed to fetch intraday data from Upstox V3:`, error)
+    console.error(`❌ Failed to fetch intraday data via API route:`, error)
     throw error // Re-throw to let caller handle
   }
 }
 
-// Get stock data based on interval type using Upstox V3 API
+// Get stock data based on interval type using our API route
 export async function getStockData(
   instrumentKey: string,
   interval: string = "1D"
@@ -285,7 +291,7 @@ export async function getStockData(
   console.log(`📈 Getting stock data for ${instrumentKey} with ${interval} interval`)
   
   try {
-    // For intraday intervals (minutes and hours), use historical API with same day
+    // For intraday intervals (minutes and hours), use intraday data
     if (["5m", "15m", "30m", "1h"].includes(interval)) {
       return await fetchIntradayData(instrumentKey, interval)
     }
@@ -294,7 +300,7 @@ export async function getStockData(
     return await fetchHistoricalData(instrumentKey, interval)
   } catch (error) {
     console.error(`❌ Failed to get stock data for ${instrumentKey}:`, error)
-    // Return empty array instead of mock data as requested
+    // Return empty array on error - no mock data
     return []
   }
 }

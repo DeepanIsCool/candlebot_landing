@@ -155,7 +155,7 @@ export function useStockStats(data: CandleData[]) {
     }
   }
 
-  // Use the new helper functions for accurate LTP and price change
+  // Use the helper functions for accurate LTP and price change
   const currentPrice = getLTPFromData(data)
   const { change, changePercent } = getPriceChangeFromData(data)
   

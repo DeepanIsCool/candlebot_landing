@@ -81,9 +81,10 @@ const CandlestickChart: React.FC<Props> = ({
     };
 
     const parseDate = d3.timeParse("%Y-%m-%d");
+    const parseDateTime = d3.timeParse("%Y-%m-%dT%H:%M:%S.%LZ");
     const chartData = data.map((d) => ({
       ...d,
-      date: parseDate(d.date) as Date,
+      date: (d.date.includes('T') ? parseDateTime(d.date) : parseDate(d.date)) as Date,
     }));
 
     function SMA(
@@ -405,7 +406,12 @@ const CandlestickChart: React.FC<Props> = ({
           .axisBottom(x)
           .tickFormat((d) => {
             const date = d as Date;
-            if (chartData.length > 50) {
+            // Check if this is intraday data (has time component)
+            const isIntraday = data.some(candle => candle.date.includes('T'));
+            
+            if (isIntraday) {
+              return d3.timeFormat("%H:%M")(date);
+            } else if (chartData.length > 50) {
               return d3.timeFormat("%m/%d")(date);
             }
             return d3.timeFormat("%m/%d/%y")(date);
@@ -550,7 +556,10 @@ const CandlestickChart: React.FC<Props> = ({
             crosshairY.attr("y1", mouseY).attr("y2", mouseY);
 
             // Update tooltip
-            const formatDate = d3.timeFormat("%B %d, %Y");
+            const isIntraday = data.some(candle => candle.date.includes('T'));
+            const formatDate = isIntraday 
+              ? d3.timeFormat("%B %d, %Y %H:%M")
+              : d3.timeFormat("%B %d, %Y");
             const formatPrice = d3.format(".2f");
             const formatVolume = d3.format(".2s");
 
