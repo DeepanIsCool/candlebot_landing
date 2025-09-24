@@ -80,7 +80,13 @@ import { Checkbox } from "@/app/components/ui/checkbox";
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
-import { Tabs, TabsContent } from "@/app/components/ui/tabs";
+import { Slider } from "@/app/components/ui/slider";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/app/components/ui/tabs";
 import { useEffect, useState } from "react";
 import {
   Area,
@@ -209,17 +215,17 @@ function CalculatorSection() {
   };
 
   const defaultSwpData = {
-    initialAmount: "",
-    monthlyWithdrawal: "",
-    annualRate: "",
-    years: "",
+    initialAmount: "1000000",
+    monthlyWithdrawal: "8000",
+    annualRate: "12",
+    years: "15",
     // Tax configuration
     investmentType: "equity" as "equity" | "debt" | "hybrid",
     taxSlab: "30",
     expenseRatio: "1.5",
     initialNAV: "10",
     // Step-up SWP parameters
-    initialWithdrawal: "",
+    initialWithdrawal: "8000",
     stepUpPercentage: "5",
     // SWP vs FD comparison
     fdRate: "7",
@@ -817,6 +823,92 @@ function CalculatorSection() {
               ],
               xAxisKey: "Year",
             };
+          } else if (swpMode === "stepUp") {
+            result = calculateStepUpSWP(
+              toNumber(swpData.initialAmount),
+              toNumber(swpData.initialWithdrawal),
+              toNumber(swpData.stepUpPercentage),
+              toNumber(swpData.annualRate),
+              toNumber(swpData.years),
+              swpTaxConfig,
+              toNumber(swpData.expenseRatio)
+            );
+
+            // Add chart visualization for step-up progression
+            const stepUpData =
+              result.yearWiseBreakdown?.map((year: any) => ({
+                Year: year.year,
+                "Withdrawal Amount": year.withdrawalAmount,
+                "End Balance": year.endBalance,
+                "Tax Deducted": year.totalTax,
+              })) || [];
+
+            newChartData = {
+              type: "area",
+              data: stepUpData,
+              areas: [
+                { key: "Withdrawal Amount", color: "#f59e0b" },
+                { key: "End Balance", color: "#10b981" },
+              ],
+              xAxisKey: "Year",
+            };
+          } else if (swpMode === "swpVsFd") {
+            result = compareSWPvsFD(
+              toNumber(swpData.initialAmount),
+              toNumber(swpData.monthlyWithdrawal),
+              toNumber(swpData.annualRate),
+              toNumber(swpData.fdRate),
+              toNumber(swpData.taxSlab),
+              toNumber(swpData.years)
+            );
+
+            // Comparison chart
+            const comparisonData = [
+              {
+                Investment: "SWP",
+                "Total Income": result.swpResult.totalIncome,
+                "Final Corpus": result.swpResult.finalCorpus,
+                "Total Tax": result.swpResult.totalTax,
+              },
+              {
+                Investment: "FD",
+                "Total Income": result.fdResult.totalIncome,
+                "Final Corpus": 0,
+                "Total Tax": result.fdResult.totalTax,
+              },
+            ];
+
+            newChartData = {
+              type: "bar",
+              data: comparisonData,
+              bars: [
+                { key: "Total Income", color: "#10b981" },
+                { key: "Total Tax", color: "#ef4444" },
+              ],
+              xAxisKey: "Investment",
+            };
+          } else if (swpMode === "perpetual") {
+            result = calculatePerpetualWithdrawal(
+              toNumber(swpData.initialAmount),
+              toNumber(swpData.annualRate),
+              swpTaxConfig
+            );
+
+            // Standard withdrawal rates chart
+            const standardRates = Object.entries(
+              result.standardOptions || {}
+            ).map(([rate, values]: [string, any]) => ({
+              Rate: `${rate}%`,
+              "Monthly Amount": values.monthlyWithdrawal,
+              "Annual Amount": values.annualWithdrawal,
+            }));
+
+            newChartData = {
+              type: "bar",
+              data: standardRates,
+              bars: [{ key: "Monthly Amount", color: "#10b981" }],
+              xAxisKey: "Rate",
+            };
           } else if (swpMode === "sustainable") {
             const sustainableResult = calculateSustainableWithdrawal(
               toNumber(swpData.initialAmount),
@@ -827,7 +919,7 @@ function CalculatorSection() {
             );
             const sustainableAmount =
               sustainableResult.grossMonthlyWithdrawal * 12;
-            result = { sustainableAmount };
+            result = { sustainableAmount, ...sustainableResult };
 
             // Radial chart showing sustainable withdrawal percentage
             const sustainableData = [
@@ -1222,38 +1314,115 @@ function CalculatorSection() {
           );
         if (results.comparison)
           return (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Investment</TableHead>
-                  <TableHead>Maturity</TableHead>
-                  <TableHead>Rank</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {results.comparison.map((item: any) => (
-                  <TableRow key={item.name}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>
-                      ₹{item.maturityAmount.toLocaleString()}
-                    </TableCell>
-                    <TableCell>{item.rank}</TableCell>
+            <div className="space-y-4">
+              <h4 className="font-semibold mb-3">Investment Comparison:</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Investment</TableHead>
+                    <TableHead>Rate</TableHead>
+                    <TableHead>Maturity Amount</TableHead>
+                    <TableHead>Interest Earned</TableHead>
+                    <TableHead>Liquidity</TableHead>
+                    <TableHead>Rank</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {results.comparison.map((item: any, index: number) => (
+                    <TableRow
+                      key={item.name}
+                      className={index === 0 ? "bg-primary/5" : ""}
+                    >
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell>{item.rate}%</TableCell>
+                      <TableCell className="font-semibold">
+                        ₹{item.maturityAmount.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        ₹{item.totalInterest.toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "px-2 py-1 rounded-full text-xs font-medium",
+                            item.liquidity === "High"
+                              ? "bg-green-100 text-green-800"
+                              : item.liquidity === "Medium"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          )}
+                        >
+                          {item.liquidity}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span
+                          className={cn(
+                            "px-2 py-1 rounded-full text-xs font-medium",
+                            item.rank === 1
+                              ? "bg-yellow-100 text-yellow-800"
+                              : item.rank <= 3
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          )}
+                        >
+                          #{item.rank}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           );
         if (results.fdDetails)
           return (
-            <div>
-              <ResultCard
-                label="Total Maturity"
-                value={`₹${results.totalMaturityAmount.toLocaleString()}`}
-                isLarge
-              />
-              <p className="text-sm text-center text-muted-foreground mt-2">
-                Average Rate: {results.averageRate}%
-              </p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <ResultCard
+                  label="Total Maturity"
+                  value={`₹${results.totalMaturityAmount.toLocaleString()}`}
+                  isLarge
+                />
+                <ResultCard
+                  label="Average Rate"
+                  value={`${results.averageRate}%`}
+                  isPrimary
+                />
+                <ResultCard
+                  label="Total Interest"
+                  value={`₹${results.totalInterest.toLocaleString()}`}
+                />
+              </div>
+              <div>
+                <h4 className="font-semibold mb-3">FD Ladder Details:</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>FD #</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Rate</TableHead>
+                      <TableHead>Tenure</TableHead>
+                      <TableHead>Maturity</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {results.fdDetails.map((fd: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          FD {fd.fdNumber}
+                        </TableCell>
+                        <TableCell>₹{fd.principal.toLocaleString()}</TableCell>
+                        <TableCell>{fd.rate}%</TableCell>
+                        <TableCell>{fd.tenure}Y</TableCell>
+                        <TableCell>
+                          ₹{fd.maturityAmount.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           );
         if (results.bestOption)
@@ -1364,23 +1533,61 @@ function CalculatorSection() {
           );
         if (results.advanceTaxRequired !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {results.advanceTaxRequired ? (
                 <>
-                  <ResultCard
-                    label="Advance Tax Required"
-                    value={`₹${results.totalAdvanceTax?.toLocaleString()}`}
-                    isLarge
-                  />
-                  <ResultCard
-                    label="Next Payment Due"
-                    value={results.nextPaymentDate || "N/A"}
-                  />
-                  <ResultCard
-                    label="Amount Due"
-                    value={`₹${results.nextPaymentAmount?.toLocaleString()}`}
-                    isPrimary
-                  />
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    <ResultCard
+                      label="Net Tax Liability"
+                      value={`₹${results.netTaxLiability?.toLocaleString()}`}
+                      isLarge
+                    />
+                    <ResultCard
+                      label="Annual Tax"
+                      value={`₹${results.annualTax?.toLocaleString()}`}
+                    />
+                    <ResultCard
+                      label="TDS Deducted"
+                      value={`₹${results.tdsDeducted?.toLocaleString()}`}
+                    />
+                  </div>
+                  {results.paymentSchedule && (
+                    <div className="mt-4">
+                      <h4 className="font-semibold mb-3">
+                        Quarterly Payment Schedule:
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Period</TableHead>
+                            <TableHead>Quarterly Amount</TableHead>
+                            <TableHead>Cumulative %</TableHead>
+                            <TableHead>Cumulative Amount</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {results.paymentSchedule.map(
+                            (payment: any, index: number) => (
+                              <TableRow key={index}>
+                                <TableCell className="font-medium">
+                                  {payment.period}
+                                </TableCell>
+                                <TableCell>
+                                  ₹{payment.quarterlyAmount.toLocaleString()}
+                                </TableCell>
+                                <TableCell>
+                                  {payment.cumulativePercentage}%
+                                </TableCell>
+                                <TableCell>
+                                  ₹{payment.cumulativeAmount.toLocaleString()}
+                                </TableCell>
+                              </TableRow>
+                            )
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
                 </>
               ) : (
                 <ResultCard
@@ -1394,60 +1601,284 @@ function CalculatorSection() {
         return null;
 
       case "swp":
+        // Standard SWP results
         if (results.finalBalance !== undefined)
           return (
-            <div className="space-y-3">
-              <ResultCard
-                label="Final Balance"
-                value={`₹${results.finalBalance.toLocaleString()}`}
-                isLarge
-              />
-              <ResultCard
-                label="Total Withdrawn"
-                value={`₹${results.totalWithdrawn.toLocaleString()}`}
-              />
-              <ResultCard
-                label="Corpus Lasts For"
-                value={`${results.yearsUntilDepletion} years`}
-                isPrimary
-              />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <ResultCard
+                  label="Final Balance"
+                  value={`₹${results.finalBalance.toLocaleString()}`}
+                  isLarge
+                />
+                <ResultCard
+                  label="Total Withdrawn"
+                  value={`₹${results.totalWithdrawn.toLocaleString()}`}
+                  isPrimary
+                />
+                <ResultCard
+                  label="Corpus Lasts For"
+                  value={`${results.yearsUntilDepletion} years`}
+                />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <ResultCard
+                  label="Tax Deducted"
+                  value={`₹${results.totalTaxDeducted?.toLocaleString() || 0}`}
+                />
+                <ResultCard
+                  label="Avg Monthly Tax"
+                  value={`₹${results.averageMonthlyTax?.toLocaleString() || 0}`}
+                />
+                <ResultCard
+                  label="Effective Rate"
+                  value={`${results.effectiveWithdrawalRate?.toFixed(2) || 0}%`}
+                />
+                <ResultCard
+                  label="Is Perpetual"
+                  value={results.isPerpetual ? "Yes" : "No"}
+                />
+              </div>
             </div>
           );
-        if (results.sustainableAmount !== undefined)
+
+        // Step-Up SWP results
+        if (results.finalWithdrawalAmount !== undefined)
           return (
-            <ResultCard
-              label="Sustainable Monthly Withdrawal"
-              value={`₹${results.sustainableAmount.toLocaleString()}`}
-              isLarge
-            />
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <ResultCard
+                  label="Final Balance"
+                  value={`₹${results.finalBalance.toLocaleString()}`}
+                  isLarge
+                />
+                <ResultCard
+                  label="Total Withdrawn"
+                  value={`₹${results.totalWithdrawn.toLocaleString()}`}
+                  isPrimary
+                />
+                <ResultCard
+                  label="Final Withdrawal"
+                  value={`₹${results.finalWithdrawalAmount.toLocaleString()}`}
+                />
+              </div>
+              {results.yearWiseBreakdown && (
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-2">
+                    Year-wise Breakdown (Sample):
+                  </h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Year</TableHead>
+                        <TableHead>Withdrawal Amount</TableHead>
+                        <TableHead>Tax Deducted</TableHead>
+                        <TableHead>End Balance</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {results.yearWiseBreakdown
+                        .slice(0, 5)
+                        .map((year: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>{year.year}</TableCell>
+                            <TableCell>
+                              ₹{year.withdrawalAmount.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              ₹{year.totalTax.toLocaleString()}
+                            </TableCell>
+                            <TableCell>
+                              ₹{year.endBalance.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
           );
+
+        // SWP vs FD comparison results
+        if (results.swpResult && results.fdResult)
+          return (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="glass-strong rounded-lg p-4 border border-border/20">
+                  <h4 className="font-semibold mb-3 text-primary">
+                    SWP Strategy
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Total Income:
+                      </span>
+                      <span className="font-medium">
+                        ₹{results.swpResult.totalIncome.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Final Corpus:
+                      </span>
+                      <span className="font-medium">
+                        ₹{results.swpResult.finalCorpus.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Tax Paid:
+                      </span>
+                      <span className="font-medium text-red-600">
+                        ₹{results.swpResult.totalTax.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="glass-strong rounded-lg p-4 border border-border/20">
+                  <h4 className="font-semibold mb-3 text-secondary">
+                    FD Strategy
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Total Income:
+                      </span>
+                      <span className="font-medium">
+                        ₹{results.fdResult.totalIncome.toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Final Corpus:
+                      </span>
+                      <span className="font-medium">₹0</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Tax Paid:
+                      </span>
+                      <span className="font-medium text-red-600">
+                        ₹{results.fdResult.totalTax.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-muted/30 rounded-lg p-4">
+                <h4 className="font-semibold mb-2">Recommendation:</h4>
+                <p className="text-sm text-muted-foreground">
+                  {results.recommendation}
+                </p>
+              </div>
+            </div>
+          );
+
+        // Sustainable withdrawal results
+        if (
+          results.sustainableAmount !== undefined &&
+          results.grossMonthlyWithdrawal
+        )
+          return (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <ResultCard
+                  label="Sustainable Monthly"
+                  value={`₹${results.sustainableAmount.toLocaleString()}`}
+                  isLarge
+                />
+                <ResultCard
+                  label="Gross Monthly"
+                  value={`₹${results.grossMonthlyWithdrawal.toLocaleString()}`}
+                  isPrimary
+                />
+                <ResultCard
+                  label="Sustainability Rate"
+                  value={`${results.sustainabilityRate?.toFixed(2) || 0}%`}
+                />
+              </div>
+              {results.recommendations && (
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-2">Recommendations:</h4>
+                  <ul className="space-y-1">
+                    {results.recommendations.map(
+                      (rec: string, index: number) => (
+                        <li
+                          key={index}
+                          className="text-sm text-muted-foreground flex items-start gap-2"
+                        >
+                          <span className="text-primary">•</span>
+                          {rec}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          );
+
+        // Perpetual withdrawal results
         if (results.standardOptions)
           return (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Rate</TableHead>
-                  <TableHead>Monthly</TableHead>
-                  <TableHead>Annual</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.entries(results.standardOptions).map(
-                  ([rate, values]: [string, any]) => (
-                    <TableRow key={rate}>
-                      <TableCell>{rate}</TableCell>
-                      <TableCell>
-                        ₹{values.monthlyWithdrawal.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        ₹{values.annualWithdrawal.toLocaleString()}
-                      </TableCell>
-                    </TableRow>
-                  )
-                )}
-              </TableBody>
-            </Table>
+            <div className="space-y-4">
+              <h4 className="font-semibold mb-3">
+                Standard Withdrawal Options:
+              </h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Withdrawal Rate</TableHead>
+                    <TableHead>Monthly Amount</TableHead>
+                    <TableHead>Annual Amount</TableHead>
+                    <TableHead>Tax Impact</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Object.entries(results.standardOptions).map(
+                    ([rate, values]: [string, any]) => (
+                      <TableRow key={rate}>
+                        <TableCell className="font-medium">{rate}%</TableCell>
+                        <TableCell>
+                          ₹
+                          {values.monthlyWithdrawal?.toLocaleString() ||
+                            values.netMonthly?.toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          ₹
+                          {values.annualWithdrawal?.toLocaleString() ||
+                            values.netAnnual?.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-red-600">
+                          ₹{values.taxImpact?.toLocaleString() || 0}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
+                </TableBody>
+              </Table>
+              {results.recommendations && (
+                <div className="mt-4">
+                  <h4 className="font-semibold mb-2">Recommendations:</h4>
+                  <ul className="space-y-1">
+                    {results.recommendations.map(
+                      (rec: string, index: number) => (
+                        <li
+                          key={index}
+                          className="text-sm text-muted-foreground flex items-start gap-2"
+                        >
+                          <span className="text-primary">•</span>
+                          {rec}
+                        </li>
+                      )
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
           );
+
         return null;
 
       case "mf":
@@ -1472,24 +1903,59 @@ function CalculatorSection() {
           );
         if (results.comparison)
           return (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fund</TableHead>
-                  <TableHead>Net Gain</TableHead>
-                  <TableHead>Net Return</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {results.comparison.map((item: any, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>₹{item.totalGains.toLocaleString()}</TableCell>
-                    <TableCell>{item.netReturn}%</TableCell>
+            <div className="space-y-4">
+              <h4 className="font-semibold mb-3">Fund Comparison Analysis:</h4>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Fund Name</TableHead>
+                    <TableHead>Investment</TableHead>
+                    <TableHead>Final Value</TableHead>
+                    <TableHead>Total Gains</TableHead>
+                    <TableHead>Gross Return</TableHead>
+                    <TableHead>Expense Ratio</TableHead>
+                    <TableHead>Net Return</TableHead>
+                    <TableHead>Absolute Return</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {results.comparison.map((fund: any, index: number) => (
+                    <TableRow
+                      key={index}
+                      className={index === 0 ? "bg-primary/5" : ""}
+                    >
+                      <TableCell className="font-medium">
+                        {fund.name || `Fund ${index + 1}`}
+                        {index === 0 && (
+                          <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                            Best
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>₹{fund.investment.toLocaleString()}</TableCell>
+                      <TableCell className="font-semibold">
+                        ₹{fund.futureValue.toLocaleString()}
+                      </TableCell>
+                      <TableCell>₹{fund.totalGains.toLocaleString()}</TableCell>
+                      <TableCell>{fund.grossReturn}%</TableCell>
+                      <TableCell className="text-red-600">
+                        {fund.expenseRatio}%
+                      </TableCell>
+                      <TableCell className="font-medium text-green-600">
+                        {fund.netReturn}%
+                      </TableCell>
+                      <TableCell>{fund.absoluteReturn.toFixed(2)}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="text-sm text-muted-foreground mt-2">
+                <p>
+                  * Funds are ranked by total gains. Consider risk factors along
+                  with returns.
+                </p>
+              </div>
+            </div>
           );
         if (results.postTaxValue !== undefined)
           return (
@@ -1608,22 +2074,10 @@ function CalculatorSection() {
                             value={sipMode}
                             onValueChange={setSipMode}
                             options={[
-                              {
-                                value: "futureValue",
-                                label: "Calculate Future Value",
-                              },
-                              {
-                                value: "targetAmount",
-                                label: "Plan for Target Amount",
-                              },
-                              {
-                                value: "taxOptimized",
-                                label: "Tax-Optimized SIP",
-                              },
-                              {
-                                value: "goalBased",
-                                label: "Goal-Based Planning",
-                              },
+                              { value: "futureValue", label: "Future Value" },
+                              { value: "targetAmount", label: "Target Plan" },
+                              { value: "taxOptimized", label: "Tax-Optimized" },
+                              { value: "goalBased", label: "Goal-Based" },
                               {
                                 value: "sipVsLumpSum",
                                 label: "SIP vs Lump Sum",
@@ -1632,53 +2086,50 @@ function CalculatorSection() {
                           />
 
                           {/* Common SIP Inputs */}
-                          {(sipMode === "futureValue" ||
-                            sipMode === "taxOptimized") && (
-                            <div className="space-y-3">
-                              <InputWithLabel
-                                label="Monthly Investment (₹)"
-                                type="number"
-                                placeholder="25000"
-                                value={sipData.monthlyInvestment}
-                                onChange={(e) =>
+                          <div className="space-y-3">
+                            <InputWithLabel
+                              label="Monthly Investment (₹)"
+                              type="number"
+                              placeholder="25000"
+                              value={sipData.monthlyInvestment}
+                              onChange={(e) =>
+                                setSipData({
+                                  ...sipData,
+                                  monthlyInvestment: e.target.value,
+                                })
+                              }
+                            />
+                            <div className="flex items-center space-x-2 pt-1">
+                              <Checkbox
+                                id="enableStepUp"
+                                checked={sipData.enableStepUp}
+                                onCheckedChange={(checked) =>
                                   setSipData({
                                     ...sipData,
-                                    monthlyInvestment: e.target.value,
+                                    enableStepUp: !!checked,
                                   })
                                 }
                               />
-                              <div className="flex items-center space-x-2 pt-1">
-                                <Checkbox
-                                  id="enableStepUp"
-                                  checked={sipData.enableStepUp}
-                                  onCheckedChange={(checked) =>
-                                    setSipData({
-                                      ...sipData,
-                                      enableStepUp: !!checked,
-                                    })
-                                  }
-                                />
-                                <Label htmlFor="enableStepUp">
-                                  Enable Step-Up SIP
-                                </Label>
-                              </div>
-                              {sipData.enableStepUp && (
-                                <InputWithLabel
-                                  label="Annual Step-Up (%)"
-                                  type="number"
-                                  placeholder="10"
-                                  value={sipData.stepUpPercentage}
-                                  onChange={(e) =>
-                                    setSipData({
-                                      ...sipData,
-                                      stepUpPercentage: e.target.value,
-                                    })
-                                  }
-                                  tooltip="The percentage by which your SIP increases annually."
-                                />
-                              )}
+                              <Label htmlFor="enableStepUp">
+                                Enable Step-Up SIP
+                              </Label>
                             </div>
-                          )}
+                            {sipData.enableStepUp && (
+                              <InputWithLabel
+                                label="Annual Step-Up (%)"
+                                type="number"
+                                placeholder="10"
+                                value={sipData.stepUpPercentage}
+                                onChange={(e) =>
+                                  setSipData({
+                                    ...sipData,
+                                    stepUpPercentage: e.target.value,
+                                  })
+                                }
+                                tooltip="The percentage by which your SIP increases annually."
+                              />
+                            )}
+                          </div>
 
                           {/* Target Amount Mode */}
                           {sipMode === "targetAmount" && (
@@ -1756,53 +2207,55 @@ function CalculatorSection() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="conservative">
-                                      Conservative
+                                      Conservative (8-10%)
                                     </SelectItem>
                                     <SelectItem value="moderate">
-                                      Moderate
+                                      Moderate (10-12%)
                                     </SelectItem>
                                     <SelectItem value="aggressive">
-                                      Aggressive
+                                      Aggressive (12-15%)
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
+                            </div>
+                          )}
+
+                          {/* SIP vs Lump Sum Mode */}
+                          {sipMode === "sipVsLumpSum" && (
+                            <div className="space-y-3">
                               <InputWithLabel
-                                label="Existing Savings (₹)"
+                                label="Total Investment Amount (₹)"
                                 type="number"
-                                placeholder="0"
-                                value={sipData.existingSavings}
+                                placeholder="1200000"
+                                value={sipData.totalInvestmentAmount}
                                 onChange={(e) =>
                                   setSipData({
                                     ...sipData,
-                                    existingSavings: e.target.value,
+                                    totalInvestmentAmount: e.target.value,
+                                  })
+                                }
+                              />
+                              <InputWithLabel
+                                label="Expected Return Rate (%)"
+                                type="number"
+                                placeholder="12"
+                                value={sipData.annualRate}
+                                onChange={(e) =>
+                                  setSipData({
+                                    ...sipData,
+                                    annualRate: e.target.value,
                                   })
                                 }
                               />
                             </div>
                           )}
 
-                          {/* SIP vs Lump Sum Mode */}
-                          {sipMode === "sipVsLumpSum" && (
-                            <InputWithLabel
-                              label="Total Investment Amount (₹)"
-                              type="number"
-                              placeholder="1200000"
-                              value={sipData.totalInvestmentAmount}
-                              onChange={(e) =>
-                                setSipData({
-                                  ...sipData,
-                                  totalInvestmentAmount: e.target.value,
-                                })
-                              }
-                            />
-                          )}
-
-                          {/* Common inputs for most modes */}
-                          {sipMode !== "goalBased" && (
-                            <>
+                          {/* Common SIP Inputs (excluding mode-specific ones) */}
+                          <div className="space-y-3">
+                            <div className="grid md:grid-cols-2 gap-3">
                               <InputWithLabel
-                                label="Time (years)"
+                                label="Investment Tenure (Years)"
                                 type="number"
                                 placeholder="10"
                                 value={sipData.years}
@@ -1814,9 +2267,9 @@ function CalculatorSection() {
                                 }
                               />
                               <InputWithLabel
-                                label="Expected Rate of Return % (p.a.)"
+                                label="Expected Return Rate (%)"
                                 type="number"
-                                placeholder="12"
+                                placeholder="15"
                                 value={sipData.annualRate}
                                 onChange={(e) =>
                                   setSipData({
@@ -1825,8 +2278,8 @@ function CalculatorSection() {
                                   })
                                 }
                               />
-                            </>
-                          )}
+                            </div>
+                          </div>
 
                           {/* Tax Configuration */}
                           {(sipMode === "futureValue" ||
@@ -1901,52 +2354,184 @@ function CalculatorSection() {
                             ]}
                           />
                           {fdMode === "simple" && (
-                            <div className="grid md:grid-cols-2 gap-3">
-                              <InputWithLabel
-                                label="Principal Amount (₹)"
-                                placeholder="100000"
-                                value={fdData.principal}
-                                onChange={(e) =>
-                                  setFdData({
-                                    ...fdData,
-                                    principal: e.target.value,
-                                  })
-                                }
-                              />
-                              <InputWithLabel
-                                label="Tenure (Years)"
-                                placeholder="5"
-                                value={fdData.tenure}
-                                onChange={(e) =>
-                                  setFdData({
-                                    ...fdData,
-                                    tenure: e.target.value,
-                                  })
-                                }
-                              />
-                              <InputWithLabel
-                                label="Annual Rate (%)"
-                                placeholder="7.5"
-                                value={fdData.annualRate}
-                                onChange={(e) =>
-                                  setFdData({
-                                    ...fdData,
-                                    annualRate: e.target.value,
-                                  })
-                                }
-                              />
-                              <InputWithLabel
-                                label="Tax Rate (%)"
-                                placeholder="10"
-                                value={fdData.taxRate}
-                                onChange={(e) =>
-                                  setFdData({
-                                    ...fdData,
-                                    taxRate: e.target.value,
-                                  })
-                                }
-                                tooltip="Your income tax slab rate for TDS calculation."
-                              />
+                            <div className="space-y-4">
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    Principal Amount (₹)
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            Amount to be invested in Fixed
+                                            Deposit
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="space-y-2">
+                                    <Slider
+                                      value={[toNumber(fdData.principal)]}
+                                      onValueChange={([value]) =>
+                                        setFdData({
+                                          ...fdData,
+                                          principal: value.toString(),
+                                        })
+                                      }
+                                      max={5000000}
+                                      min={10000}
+                                      step={10000}
+                                      className="flex-1"
+                                    />
+                                    <Input
+                                      placeholder="100000"
+                                      value={fdData.principal}
+                                      onChange={(e) =>
+                                        setFdData({
+                                          ...fdData,
+                                          principal: e.target.value,
+                                        })
+                                      }
+                                      className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    Tenure (Years)
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Fixed deposit lock-in period</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="space-y-2">
+                                    <Slider
+                                      value={[toNumber(fdData.tenure)]}
+                                      onValueChange={([value]) =>
+                                        setFdData({
+                                          ...fdData,
+                                          tenure: value.toString(),
+                                        })
+                                      }
+                                      max={10}
+                                      min={1}
+                                      step={0.5}
+                                      className="flex-1"
+                                    />
+                                    <Input
+                                      placeholder="5"
+                                      value={fdData.tenure}
+                                      onChange={(e) =>
+                                        setFdData({
+                                          ...fdData,
+                                          tenure: e.target.value,
+                                        })
+                                      }
+                                      className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    Annual Rate (%)
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            Annual interest rate offered by the
+                                            bank
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="space-y-2">
+                                    <Slider
+                                      value={[toNumber(fdData.annualRate)]}
+                                      onValueChange={([value]) =>
+                                        setFdData({
+                                          ...fdData,
+                                          annualRate: value.toString(),
+                                        })
+                                      }
+                                      max={12}
+                                      min={4}
+                                      step={0.1}
+                                      className="flex-1"
+                                    />
+                                    <Input
+                                      placeholder="7.5"
+                                      value={fdData.annualRate}
+                                      onChange={(e) =>
+                                        setFdData({
+                                          ...fdData,
+                                          annualRate: e.target.value,
+                                        })
+                                      }
+                                      className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    Tax Rate (%)
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            Your income tax slab rate for TDS
+                                            calculation
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="space-y-2">
+                                    <Slider
+                                      value={[toNumber(fdData.taxRate)]}
+                                      onValueChange={([value]) =>
+                                        setFdData({
+                                          ...fdData,
+                                          taxRate: value.toString(),
+                                        })
+                                      }
+                                      max={30}
+                                      min={0}
+                                      step={5}
+                                      className="flex-1"
+                                    />
+                                    <Input
+                                      placeholder="10"
+                                      value={fdData.taxRate}
+                                      onChange={(e) =>
+                                        setFdData({
+                                          ...fdData,
+                                          taxRate: e.target.value,
+                                        })
+                                      }
+                                      className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           )}
                           {fdMode === "comparison" && (
@@ -2347,70 +2932,238 @@ function CalculatorSection() {
                           <div className="space-y-3">
                             {/* Common SWP Inputs */}
                             <div className="grid md:grid-cols-2 gap-3">
-                              <InputWithLabel
-                                label="Initial Investment (₹)"
-                                placeholder="1000000"
-                                value={swpData.initialAmount}
-                                onChange={(e) =>
-                                  setSwpData({
-                                    ...swpData,
-                                    initialAmount: e.target.value,
-                                  })
-                                }
-                              />
-                              <InputWithLabel
-                                label="Expected Annual Return (%)"
-                                placeholder="10"
-                                value={swpData.annualRate}
-                                onChange={(e) =>
-                                  setSwpData({
-                                    ...swpData,
-                                    annualRate: e.target.value,
-                                  })
-                                }
-                              />
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-1">
+                                  Initial Investment (₹)
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          Total amount to be invested initially
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </Label>
+                                <div className="space-y-2">
+                                  <Slider
+                                    value={[toNumber(swpData.initialAmount)]}
+                                    onValueChange={([value]) =>
+                                      setSwpData({
+                                        ...swpData,
+                                        initialAmount: value.toString(),
+                                      })
+                                    }
+                                    max={10000000}
+                                    min={100000}
+                                    step={50000}
+                                    className="flex-1"
+                                  />
+                                  <Input
+                                    placeholder="1000000"
+                                    value={swpData.initialAmount}
+                                    onChange={(e) =>
+                                      setSwpData({
+                                        ...swpData,
+                                        initialAmount: e.target.value,
+                                      })
+                                    }
+                                    className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-1">
+                                  Expected Annual Return (%)
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          Expected annual return from your
+                                          investments
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </Label>
+                                <div className="space-y-2">
+                                  <Slider
+                                    value={[toNumber(swpData.annualRate)]}
+                                    onValueChange={([value]) =>
+                                      setSwpData({
+                                        ...swpData,
+                                        annualRate: value.toString(),
+                                      })
+                                    }
+                                    max={25}
+                                    min={5}
+                                    step={0.5}
+                                    className="flex-1"
+                                  />
+                                  <Input
+                                    placeholder="10"
+                                    value={swpData.annualRate}
+                                    onChange={(e) =>
+                                      setSwpData({
+                                        ...swpData,
+                                        annualRate: e.target.value,
+                                      })
+                                    }
+                                    className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                  />
+                                </div>
+                              </div>
                             </div>
 
                             {/* Mode-specific inputs */}
                             {(swpMode === "standard" ||
                               swpMode === "swpVsFd") && (
-                              <InputWithLabel
-                                label="Monthly Withdrawal (₹)"
-                                placeholder="8000"
-                                value={swpData.monthlyWithdrawal}
-                                onChange={(e) =>
-                                  setSwpData({
-                                    ...swpData,
-                                    monthlyWithdrawal: e.target.value,
-                                  })
-                                }
-                              />
+                              <div className="space-y-2">
+                                <Label className="text-sm font-medium flex items-center gap-1">
+                                  Monthly Withdrawal (₹)
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-3 w-3 text-muted-foreground" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          Amount you want to withdraw monthly
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </Label>
+                                <div className="space-y-2">
+                                  <Slider
+                                    value={[
+                                      toNumber(swpData.monthlyWithdrawal),
+                                    ]}
+                                    onValueChange={([value]) =>
+                                      setSwpData({
+                                        ...swpData,
+                                        monthlyWithdrawal: value.toString(),
+                                      })
+                                    }
+                                    max={50000}
+                                    min={1000}
+                                    step={500}
+                                    className="flex-1"
+                                  />
+                                  <Input
+                                    placeholder="8000"
+                                    value={swpData.monthlyWithdrawal}
+                                    onChange={(e) =>
+                                      setSwpData({
+                                        ...swpData,
+                                        monthlyWithdrawal: e.target.value,
+                                      })
+                                    }
+                                    className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                  />
+                                </div>
+                              </div>
                             )}
 
                             {swpMode === "stepUp" && (
                               <div className="grid md:grid-cols-2 gap-3">
-                                <InputWithLabel
-                                  label="Initial Monthly Withdrawal (₹)"
-                                  placeholder="8000"
-                                  value={swpData.initialWithdrawal}
-                                  onChange={(e) =>
-                                    setSwpData({
-                                      ...swpData,
-                                      initialWithdrawal: e.target.value,
-                                    })
-                                  }
-                                />
-                                <InputWithLabel
-                                  label="Annual Step-Up (%)"
-                                  placeholder="5"
-                                  value={swpData.stepUpPercentage}
-                                  onChange={(e) =>
-                                    setSwpData({
-                                      ...swpData,
-                                      stepUpPercentage: e.target.value,
-                                    })
-                                  }
-                                />
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    Initial Monthly Withdrawal (₹)
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            Starting withdrawal amount, will
+                                            increase annually
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="space-y-2">
+                                    <Slider
+                                      value={[
+                                        toNumber(swpData.initialWithdrawal),
+                                      ]}
+                                      onValueChange={([value]) =>
+                                        setSwpData({
+                                          ...swpData,
+                                          initialWithdrawal: value.toString(),
+                                        })
+                                      }
+                                      max={50000}
+                                      min={1000}
+                                      step={500}
+                                      className="flex-1"
+                                    />
+                                    <Input
+                                      placeholder="8000"
+                                      value={swpData.initialWithdrawal}
+                                      onChange={(e) =>
+                                        setSwpData({
+                                          ...swpData,
+                                          initialWithdrawal: e.target.value,
+                                        })
+                                      }
+                                      className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label className="text-sm font-medium flex items-center gap-1">
+                                    Annual Step-Up (%)
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger>
+                                          <Info className="h-3 w-3 text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>
+                                            Yearly increase in withdrawal amount
+                                          </p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </Label>
+                                  <div className="space-y-2">
+                                    <Slider
+                                      value={[
+                                        toNumber(swpData.stepUpPercentage),
+                                      ]}
+                                      onValueChange={([value]) =>
+                                        setSwpData({
+                                          ...swpData,
+                                          stepUpPercentage: value.toString(),
+                                        })
+                                      }
+                                      max={15}
+                                      min={0}
+                                      step={0.5}
+                                      className="flex-1"
+                                    />
+                                    <Input
+                                      placeholder="5"
+                                      value={swpData.stepUpPercentage}
+                                      onChange={(e) =>
+                                        setSwpData({
+                                          ...swpData,
+                                          stepUpPercentage: e.target.value,
+                                        })
+                                      }
+                                      className="bg-muted/50 border-border text-foreground h-9 focus-ring"
+                                    />
+                                  </div>
+                                </div>
                               </div>
                             )}
 
