@@ -100,14 +100,14 @@ export function Navbar() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg">
               <img
-                src="/candlebot_logo_ani.gif"
-                alt="CandleBot Logo"
+                src="/moneystocks_logo_ani.gif"
+                alt="MoneyStocks Logo"
                 className="w-full h-full object-contain"
               />
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold text-foreground tracking-tight drop-shadow-sm">
-                CandleBot
+                MoneyStocks
               </span>
             </div>
           </div>

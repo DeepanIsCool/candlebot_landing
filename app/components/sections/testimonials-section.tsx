@@ -20,9 +20,9 @@ const testimonials = [
     image: "/professional-indian-man-suit.png",
     rating: 5,
     shortReview:
-      "CandleBot has revolutionized how I manage my clients' portfolios. The analytics are incredible.",
+      "MoneyStocks has revolutionized how I manage my clients' portfolios. The analytics are incredible.",
     fullReview:
-      "I've been using CandleBot for over 2 years now, and it has completely transformed my investment approach. The real-time analytics, comprehensive calculators, and intuitive interface make it incredibly easy to make informed decisions. The AI-powered insights have helped me identify opportunities I would have missed otherwise. My clients have seen an average 23% improvement in their portfolio performance since I started using this platform. The customer support is exceptional - they're always available when I need help. I can't imagine managing investments without CandleBot now.",
+      "I've been using MoneyStocks for over 2 years now, and it has completely transformed my investment approach. The real-time analytics, comprehensive calculators, and intuitive interface make it incredibly easy to make informed decisions. The AI-powered insights have helped me identify opportunities I would have missed otherwise. My clients have seen an average 23% improvement in their portfolio performance since I started using this platform. The customer support is exceptional - they're always available when I need help. I can't imagine managing investments without MoneyStocks now.",
     achievement: "Increased client portfolio performance by 23%",
   },
   {
@@ -35,7 +35,7 @@ const testimonials = [
     shortReview:
       "The calculators saved me hours of manual work. My SIP planning is now completely automated.",
     fullReview:
-      "As an independent trader, I need tools that are both powerful and easy to use. CandleBot delivers on both fronts. The SIP calculator alone has saved me countless hours of manual calculations, and the accuracy is spot-on. The tax planning features have helped me optimize my investments for better after-tax returns. What I love most is the clean, intuitive interface - I can focus on trading instead of fighting with complicated software. The mobile app is fantastic too, allowing me to monitor my investments on the go. The community features have connected me with other traders, and I've learned so much from their shared insights.",
+      "As an independent trader, I need tools that are both powerful and easy to use. MoneyStocks delivers on both fronts. The SIP calculator alone has saved me countless hours of manual calculations, and the accuracy is spot-on. The tax planning features have helped me optimize my investments for better after-tax returns. What I love most is the clean, intuitive interface - I can focus on trading instead of fighting with complicated software. The mobile app is fantastic too, allowing me to monitor my investments on the go. The community features have connected me with other traders, and I've learned so much from their shared insights.",
     achievement: "Automated 90% of investment calculations",
   },
   {
@@ -48,7 +48,7 @@ const testimonials = [
     shortReview:
       "Best platform for client presentations. The visual charts make complex data easy to understand.",
     fullReview:
-      "CandleBot has become an essential tool in my daily work as a financial advisor. The platform's ability to generate clear, professional charts and reports has made my client presentations much more effective. Clients can easily understand their investment performance and future projections through the intuitive visualizations. The comprehensive calculator suite allows me to run multiple scenarios during client meetings, helping them make informed decisions on the spot. The security features give both me and my clients peace of mind. The platform's reliability is outstanding - I've never experienced any downtime during critical trading hours. It's definitely worth the investment.",
+      "MoneyStocks has become an essential tool in my daily work as a financial advisor. The platform's ability to generate clear, professional charts and reports has made my client presentations much more effective. Clients can easily understand their investment performance and future projections through the intuitive visualizations. The comprehensive calculator suite allows me to run multiple scenarios during client meetings, helping them make informed decisions on the spot. The security features give both me and my clients peace of mind. The platform's reliability is outstanding - I've never experienced any downtime during critical trading hours. It's definitely worth the investment.",
     achievement: "Improved client satisfaction by 40%",
   },
   {
@@ -61,7 +61,7 @@ const testimonials = [
     shortReview:
       "The multi-market access feature is a game-changer. I can manage global portfolios seamlessly.",
     fullReview:
-      "Managing high-net-worth clients requires sophisticated tools, and CandleBot exceeds all expectations. The multi-market access feature allows me to manage both domestic and international investments from a single platform, which has streamlined my workflow significantly. The advanced analytics help me identify market trends and opportunities across different asset classes. The risk management tools are particularly impressive - they've helped me protect client portfolios during volatile market conditions. The platform's speed and reliability are crucial when dealing with large transactions. My clients appreciate the detailed reports and transparent fee structure. CandleBot has definitely elevated the quality of service I can provide.",
+      "Managing high-net-worth clients requires sophisticated tools, and MoneyStocks exceeds all expectations. The multi-market access feature allows me to manage both domestic and international investments from a single platform, which has streamlined my workflow significantly. The advanced analytics help me identify market trends and opportunities across different asset classes. The risk management tools are particularly impressive - they've helped me protect client portfolios during volatile market conditions. The platform's speed and reliability are crucial when dealing with large transactions. My clients appreciate the detailed reports and transparent fee structure. MoneyStocks has definitely elevated the quality of service I can provide.",
     achievement: "Manages ₹500+ crores in client assets",
   },
   {
@@ -74,7 +74,7 @@ const testimonials = [
     shortReview:
       "Lightning-fast execution and real-time data. Perfect for day trading strategies.",
     fullReview:
-      "Speed is everything in day trading, and CandleBot delivers exceptional performance. The sub-millisecond execution times have given me a significant edge in the market. The real-time data streaming is incredibly reliable - I've never experienced delays or data discrepancies. The advanced charting tools with technical indicators are comprehensive and customizable to my trading style. The mobile app is equally powerful, allowing me to trade effectively even when I'm away from my desk. The platform's stability during high-volume trading sessions is remarkable. The customer support team understands the urgency of trading issues and responds immediately. CandleBot has definitely improved my trading profitability.",
+      "Speed is everything in day trading, and MoneyStocks delivers exceptional performance. The sub-millisecond execution times have given me a significant edge in the market. The real-time data streaming is incredibly reliable - I've never experienced delays or data discrepancies. The advanced charting tools with technical indicators are comprehensive and customizable to my trading style. The mobile app is equally powerful, allowing me to trade effectively even when I'm away from my desk. The platform's stability during high-volume trading sessions is remarkable. The customer support team understands the urgency of trading issues and responds immediately. MoneyStocks has definitely improved my trading profitability.",
     achievement: "Achieved 85% win rate in day trading",
   },
   {
@@ -87,7 +87,7 @@ const testimonials = [
     shortReview:
       "The research tools and market insights have enhanced my analysis capabilities significantly.",
     fullReview:
-      "As an investment analyst, I need access to comprehensive market data and analytical tools. CandleBot provides everything I need and more. The research capabilities are outstanding - I can analyze market trends, compare securities, and generate detailed reports efficiently. The AI-powered insights often highlight patterns I might have missed in my manual analysis. The historical data access is extensive, allowing me to conduct thorough backtesting of investment strategies. The collaboration features enable seamless sharing of research with my team. The platform's integration with various data sources saves me significant time in data collection. CandleBot has become an indispensable part of my analytical toolkit.",
+      "As an investment analyst, I need access to comprehensive market data and analytical tools. MoneyStocks provides everything I need and more. The research capabilities are outstanding - I can analyze market trends, compare securities, and generate detailed reports efficiently. The AI-powered insights often highlight patterns I might have missed in my manual analysis. The historical data access is extensive, allowing me to conduct thorough backtesting of investment strategies. The collaboration features enable seamless sharing of research with my team. The platform's integration with various data sources saves me significant time in data collection. MoneyStocks has become an indispensable part of my analytical toolkit.",
     achievement: "Reduced research time by 60%",
   },
 ];
@@ -126,7 +126,7 @@ export function TestimonialsSection() {
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Join thousands of satisfied traders and investors who trust
-            CandleBot for their financial success
+            MoneyStocks for their financial success
           </p>
         </div>
 

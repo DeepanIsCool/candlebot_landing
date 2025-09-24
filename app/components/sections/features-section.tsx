@@ -104,7 +104,7 @@ export function FeaturesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-foreground mb-4">
-            Why Choose CandleBot?
+            Why Choose MoneyStocks?
           </h2>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Experience the future of trading with our cutting-edge platform
@@ -218,7 +218,7 @@ export function FeaturesSection() {
                 Ready to Start Trading?
               </h3>
               <p className="text-slate-200 dark:text-blue-100 text-lg mb-6 max-w-2xl mx-auto">
-                Join thousands of successful traders who trust CandleBot for
+                Join thousands of successful traders who trust MoneyStocks for
                 their investment journey
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">

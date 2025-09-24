@@ -8,13 +8,13 @@ import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CandleBot - Advanced Trading Platform",
+  title: "MoneyStocks - Advanced Trading Platform",
   description:
     "Professional stock trading and investment platform with advanced calculators and real-time market data",
   icons: {
-    icon: "/candlebot_logo.png",
-    shortcut: "/candlebot_logo.png",
-    apple: "/candlebot_logo.png",
+    icon: "/moneystocks_logo.png",
+    shortcut: "/moneystocks_logo.png",
+    apple: "/moneystocks_logo.png",
   },
 };
 

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'User-Agent': 'CandleBot/1.0'
+        'User-Agent': 'MoneyStocks/1.0'
       }
     })
 

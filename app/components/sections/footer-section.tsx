@@ -51,13 +51,13 @@ export function FooterSection() {
             <div className="flex items-center space-x-2 mb-6">
               <div className="w-10 h-10 rounded-lg overflow-hidden shadow-lg">
                 <img
-                  src="/candlebot_logo_ani.gif"
-                  alt="CandleBot Logo"
+                  src="/moneystocks_logo_ani.gif"
+                  alt="MoneyStocks Logo"
                   className="w-full h-full object-contain"
                 />
               </div>
               <span className="text-2xl font-bold text-foreground">
-                CandleBot
+                MoneyStocks
               </span>
             </div>
             <p className="text-muted-foreground mb-6 leading-relaxed">
@@ -67,7 +67,7 @@ export function FooterSection() {
             <div className="space-y-3">
               <div className="flex items-center text-muted-foreground">
                 <Mail className="w-5 h-5 mr-3 text-primary" />
-                <span>support@candlebot.com</span>
+                <span>support@moneystocks.com</span>
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Phone className="w-5 h-5 mr-3 text-primary" />
@@ -177,7 +177,7 @@ export function FooterSection() {
         <div className="border-t border-slate-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-slate-400 text-sm mb-4 md:mb-0">
-              © 2025 CandleBot. All rights reserved. | SEBI Reg: INZ000123456
+              © 2025 MoneyStocks. All rights reserved. | SEBI Reg: INZ000123456
             </div>
             <div className="flex space-x-6">
               {footerLinks.legal.map((link) => (

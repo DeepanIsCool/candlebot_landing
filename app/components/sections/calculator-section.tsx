@@ -4,34 +4,34 @@ import {
   calculateCompoundFD,
   calculateFDLadder,
   calculateFDWithTDS,
-  compareFDInvestments,
   calculateOptimalFDTenure,
   calculatePrematureWithdrawal,
+  compareFDInvestments,
 } from "@/app/components/lib/calculators/fixed-deposit";
 import {
-  calculateCapitalGainsTax,
-  compareTaxRegimes,
-  calculateTDS,
   calculateAdvanceTax,
+  calculateCapitalGainsTax,
+  calculateTDS,
+  compareTaxRegimes,
 } from "@/app/components/lib/calculators/income-tax-calculator";
 import {
   calculateReturnsWithExpenses,
-  compareFunds,
   calculateTaxAdjustedReturns,
+  compareFunds,
 } from "@/app/components/lib/calculators/mutual-fund-calculator";
 import {
+  calculateGoalBasedSIP,
   calculateRequiredSIP,
   calculateSIPFutureValue,
   calculateStepUpSIP,
   calculateTaxOptimizedSIP,
-  calculateGoalBasedSIP,
   compareSIPvsLumpSum,
 } from "@/app/components/lib/calculators/sip-calculator";
 import {
   calculatePerpetualWithdrawal,
   calculateSWP,
-  calculateSustainableWithdrawal,
   calculateStepUpSWP,
+  calculateSustainableWithdrawal,
   compareSWPvsFD,
 } from "@/app/components/lib/calculators/swp-calculator";
 import {
@@ -349,7 +349,8 @@ function CalculatorSection() {
                 Year: i,
                 "Total Invested": yearResult.totalInvested,
                 "Future Value": yearResult.futureValue,
-                "Net Future Value": yearResult.netFutureValue || yearResult.futureValue,
+                "Net Future Value":
+                  yearResult.netFutureValue || yearResult.futureValue,
                 "Tax Amount": yearResult.taxAmount || 0,
               });
             }
@@ -377,14 +378,22 @@ function CalculatorSection() {
             const wealthGain = toNumber(sipData.targetAmount) - totalInvestment;
 
             const targetData = [
-              { name: "Total Investment", value: totalInvestment, color: "#3b82f6" },
+              {
+                name: "Total Investment",
+                value: totalInvestment,
+                color: "#3b82f6",
+              },
               { name: "Wealth Gain", value: wealthGain, color: "#10b981" },
             ];
 
             newChartData = {
               type: "pie",
               data: targetData,
-              pieConfig: { nameKey: "name", valueKey: "value", colors: ["#3b82f6", "#10b981"] },
+              pieConfig: {
+                nameKey: "name",
+                valueKey: "value",
+                colors: ["#3b82f6", "#10b981"],
+              },
               xAxisKey: "name",
             };
           } else if (sipMode === "taxOptimized") {
@@ -397,14 +406,26 @@ function CalculatorSection() {
 
             // Chart showing equity vs debt allocation
             const allocationData = [
-              { name: "Equity", value: result.equityAllocation.futureValue, color: "#10b981" },
-              { name: "Debt", value: result.debtAllocation.futureValue, color: "#3b82f6" },
+              {
+                name: "Equity",
+                value: result.equityAllocation.futureValue,
+                color: "#10b981",
+              },
+              {
+                name: "Debt",
+                value: result.debtAllocation.futureValue,
+                color: "#3b82f6",
+              },
             ];
 
             newChartData = {
               type: "pie",
               data: allocationData,
-              pieConfig: { nameKey: "name", valueKey: "value", colors: ["#10b981", "#3b82f6"] },
+              pieConfig: {
+                nameKey: "name",
+                valueKey: "value",
+                colors: ["#10b981", "#3b82f6"],
+              },
               xAxisKey: "name",
             };
           } else if (sipMode === "goalBased") {
@@ -418,14 +439,26 @@ function CalculatorSection() {
 
             // Chart showing asset allocation
             const allocationData = [
-              { name: "Equity", value: result.assetAllocation.equity, color: "#10b981" },
-              { name: "Debt", value: result.assetAllocation.debt, color: "#3b82f6" },
+              {
+                name: "Equity",
+                value: result.assetAllocation.equity,
+                color: "#10b981",
+              },
+              {
+                name: "Debt",
+                value: result.assetAllocation.debt,
+                color: "#3b82f6",
+              },
             ];
 
             newChartData = {
               type: "pie",
               data: allocationData,
-              pieConfig: { nameKey: "name", valueKey: "value", colors: ["#10b981", "#3b82f6"] },
+              pieConfig: {
+                nameKey: "name",
+                valueKey: "value",
+                colors: ["#10b981", "#3b82f6"],
+              },
               xAxisKey: "name",
             };
           } else if (sipMode === "sipVsLumpSum") {
@@ -437,8 +470,16 @@ function CalculatorSection() {
 
             // Chart showing comparison
             const comparisonData = [
-              { name: "SIP", value: result.sipResult.futureValue, color: "#10b981" },
-              { name: "Lump Sum", value: result.lumpSumResult.futureValue, color: "#3b82f6" },
+              {
+                name: "SIP",
+                value: result.sipResult.futureValue,
+                color: "#10b981",
+              },
+              {
+                name: "Lump Sum",
+                value: result.lumpSumResult.futureValue,
+                color: "#3b82f6",
+              },
             ];
 
             newChartData = {
@@ -562,9 +603,21 @@ function CalculatorSection() {
 
             // Comparison chart showing normal vs penalized maturity
             const withdrawalData = [
-              { name: "Normal Maturity", value: result.normalMaturityAmount, color: "#10b981" },
-              { name: "Penalized Amount", value: result.penalizedMaturityAmount, color: "#ef4444" },
-              { name: "Penalty Loss", value: result.penaltyAmount + result.estimatedInterestLoss, color: "#f59e0b" },
+              {
+                name: "Normal Maturity",
+                value: result.normalMaturityAmount,
+                color: "#10b981",
+              },
+              {
+                name: "Penalized Amount",
+                value: result.penalizedMaturityAmount,
+                color: "#ef4444",
+              },
+              {
+                name: "Penalty Loss",
+                value: result.penaltyAmount + result.estimatedInterestLoss,
+                color: "#f59e0b",
+              },
             ];
 
             newChartData = {
@@ -649,8 +702,16 @@ function CalculatorSection() {
             // Bar chart showing TDS breakdown
             const tdsData = [
               { name: "Annual Tax", value: result.annualTax, color: "#ef4444" },
-              { name: "Monthly TDS", value: result.monthlyTDS * 12, color: "#f59e0b" },
-              { name: "Net Annual Salary", value: result.netAnnualSalary, color: "#10b981" },
+              {
+                name: "Monthly TDS",
+                value: result.monthlyTDS * 12,
+                color: "#f59e0b",
+              },
+              {
+                name: "Net Annual Salary",
+                value: result.netAnnualSalary,
+                color: "#10b981",
+              },
             ];
 
             newChartData = {
@@ -673,16 +734,24 @@ function CalculatorSection() {
               toNumber(taxData.age)
             );
 
-            const annualTax = Math.min(taxResult.newRegime.totalTax, taxResult.oldRegime.totalTax);
-            result = calculateAdvanceTax(annualTax, toNumber(taxData.tdsDeducted || "0"));
+            const annualTax = Math.min(
+              taxResult.newRegime.totalTax,
+              taxResult.oldRegime.totalTax
+            );
+            result = calculateAdvanceTax(
+              annualTax,
+              toNumber(taxData.tdsDeducted || "0")
+            );
 
             // Line chart showing advance tax payment schedule
             if (result.paymentSchedule) {
-              const advanceData = result.paymentSchedule.map((payment: any) => ({
-                date: payment.dueDate,
-                "Cumulative Payment": payment.cumulativeAmount,
-                "Required Payment": payment.requiredAmount,
-              }));
+              const advanceData = result.paymentSchedule.map(
+                (payment: any) => ({
+                  date: payment.dueDate,
+                  "Cumulative Payment": payment.cumulativeAmount,
+                  "Required Payment": payment.requiredAmount,
+                })
+              );
 
               newChartData = {
                 type: "line",
@@ -701,7 +770,7 @@ function CalculatorSection() {
             investmentType: swpData.investmentType,
             taxSlab: toNumber(swpData.taxSlab),
           };
-          
+
           if (swpMode === "standard") {
             result = calculateSWP(
               toNumber(swpData.initialAmount),
@@ -756,7 +825,8 @@ function CalculatorSection() {
               toNumber(swpData.years),
               toNumber(swpData.expenseRatio)
             );
-            const sustainableAmount = sustainableResult.grossMonthlyWithdrawal * 12;
+            const sustainableAmount =
+              sustainableResult.grossMonthlyWithdrawal * 12;
             result = { sustainableAmount };
 
             // Radial chart showing sustainable withdrawal percentage
@@ -879,7 +949,16 @@ function CalculatorSection() {
           } else if (mfMode === "taxAdjusted") {
             result = calculateTaxAdjustedReturns(
               toNumber(mfData.investment),
-              toNumber(mfData.currentValue || (toNumber(mfData.investment) * Math.pow(1 + (toNumber(mfData.annualRate) / 100), toNumber(mfData.years))).toString()),
+              toNumber(
+                mfData.currentValue ||
+                  (
+                    toNumber(mfData.investment) *
+                    Math.pow(
+                      1 + toNumber(mfData.annualRate) / 100,
+                      toNumber(mfData.years)
+                    )
+                  ).toString()
+              ),
               toNumber(mfData.holdingPeriod),
               mfData.fundType,
               toNumber(mfData.incomeSlabRate)
@@ -887,9 +966,21 @@ function CalculatorSection() {
 
             // Comparison chart showing pre-tax vs post-tax returns
             const taxComparisonData = [
-              { name: "Pre-Tax Value", value: result.preTaxValue, color: "#3b82f6" },
-              { name: "Tax Liability", value: result.taxLiability, color: "#ef4444" },
-              { name: "Post-Tax Value", value: result.postTaxValue, color: "#10b981" },
+              {
+                name: "Pre-Tax Value",
+                value: result.preTaxValue,
+                color: "#3b82f6",
+              },
+              {
+                name: "Tax Liability",
+                value: result.taxLiability,
+                color: "#ef4444",
+              },
+              {
+                name: "Post-Tax Value",
+                value: result.postTaxValue,
+                color: "#10b981",
+              },
             ];
 
             newChartData = {
@@ -908,16 +999,32 @@ function CalculatorSection() {
               { income: 1500000, name: "Above ₹15L" },
             ];
 
-            const slabResults = incomeSlabs.map(slab => {
-              const taxRate = slab.income <= 300000 ? 0 : 
-                             slab.income <= 600000 ? 5 :
-                             slab.income <= 900000 ? 10 :
-                             slab.income <= 1200000 ? 15 :
-                             slab.income <= 1500000 ? 20 : 30;
-              
+            const slabResults = incomeSlabs.map((slab) => {
+              const taxRate =
+                slab.income <= 300000
+                  ? 0
+                  : slab.income <= 600000
+                  ? 5
+                  : slab.income <= 900000
+                  ? 10
+                  : slab.income <= 1200000
+                  ? 15
+                  : slab.income <= 1500000
+                  ? 20
+                  : 30;
+
               const slabResult = calculateTaxAdjustedReturns(
                 toNumber(mfData.investment),
-                toNumber(mfData.currentValue || (toNumber(mfData.investment) * Math.pow(1 + (toNumber(mfData.annualRate) / 100), toNumber(mfData.years))).toString()),
+                toNumber(
+                  mfData.currentValue ||
+                    (
+                      toNumber(mfData.investment) *
+                      Math.pow(
+                        1 + toNumber(mfData.annualRate) / 100,
+                        toNumber(mfData.years)
+                      )
+                    ).toString()
+                ),
                 toNumber(mfData.holdingPeriod),
                 mfData.fundType,
                 taxRate
@@ -1422,7 +1529,9 @@ function CalculatorSection() {
                   <TableRow key={index}>
                     <TableCell>{slab.incomeRange}</TableCell>
                     <TableCell>{slab.effectiveTaxRate}%</TableCell>
-                    <TableCell>₹{slab.postTaxReturns.toLocaleString()}</TableCell>
+                    <TableCell>
+                      ₹{slab.postTaxReturns.toLocaleString()}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -1499,16 +1608,32 @@ function CalculatorSection() {
                             value={sipMode}
                             onValueChange={setSipMode}
                             options={[
-                              { value: "futureValue", label: "Calculate Future Value" },
-                              { value: "targetAmount", label: "Plan for Target Amount" },
-                              { value: "taxOptimized", label: "Tax-Optimized SIP" },
-                              { value: "goalBased", label: "Goal-Based Planning" },
-                              { value: "sipVsLumpSum", label: "SIP vs Lump Sum" },
+                              {
+                                value: "futureValue",
+                                label: "Calculate Future Value",
+                              },
+                              {
+                                value: "targetAmount",
+                                label: "Plan for Target Amount",
+                              },
+                              {
+                                value: "taxOptimized",
+                                label: "Tax-Optimized SIP",
+                              },
+                              {
+                                value: "goalBased",
+                                label: "Goal-Based Planning",
+                              },
+                              {
+                                value: "sipVsLumpSum",
+                                label: "SIP vs Lump Sum",
+                              },
                             ]}
                           />
 
                           {/* Common SIP Inputs */}
-                          {(sipMode === "futureValue" || sipMode === "taxOptimized") && (
+                          {(sipMode === "futureValue" ||
+                            sipMode === "taxOptimized") && (
                             <div className="space-y-3">
                               <InputWithLabel
                                 label="Monthly Investment (₹)"
@@ -1619,7 +1744,10 @@ function CalculatorSection() {
                                   onValueChange={(value) =>
                                     setSipData({
                                       ...sipData,
-                                      riskProfile: value as "conservative" | "moderate" | "aggressive",
+                                      riskProfile: value as
+                                        | "conservative"
+                                        | "moderate"
+                                        | "aggressive",
                                     })
                                   }
                                 >
@@ -1627,9 +1755,15 @@ function CalculatorSection() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="conservative">Conservative</SelectItem>
-                                    <SelectItem value="moderate">Moderate</SelectItem>
-                                    <SelectItem value="aggressive">Aggressive</SelectItem>
+                                    <SelectItem value="conservative">
+                                      Conservative
+                                    </SelectItem>
+                                    <SelectItem value="moderate">
+                                      Moderate
+                                    </SelectItem>
+                                    <SelectItem value="aggressive">
+                                      Aggressive
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -1695,9 +1829,12 @@ function CalculatorSection() {
                           )}
 
                           {/* Tax Configuration */}
-                          {(sipMode === "futureValue" || sipMode === "taxOptimized") && (
+                          {(sipMode === "futureValue" ||
+                            sipMode === "taxOptimized") && (
                             <div className="space-y-3 border-t pt-3">
-                              <Label className="text-sm font-medium">Tax Configuration</Label>
+                              <Label className="text-sm font-medium">
+                                Tax Configuration
+                              </Label>
                               <div className="grid md:grid-cols-2 gap-3">
                                 <div className="space-y-2">
                                   <Label>Investment Type</Label>
@@ -1706,7 +1843,10 @@ function CalculatorSection() {
                                     onValueChange={(value) =>
                                       setSipData({
                                         ...sipData,
-                                        investmentType: value as "equity" | "debt" | "hybrid",
+                                        investmentType: value as
+                                          | "equity"
+                                          | "debt"
+                                          | "hybrid",
                                       })
                                     }
                                   >
@@ -1714,9 +1854,13 @@ function CalculatorSection() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="equity">Equity</SelectItem>
+                                      <SelectItem value="equity">
+                                        Equity
+                                      </SelectItem>
                                       <SelectItem value="debt">Debt</SelectItem>
-                                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                                      <SelectItem value="hybrid">
+                                        Hybrid
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -1746,8 +1890,14 @@ function CalculatorSection() {
                               { value: "simple", label: "FD Calculator" },
                               { value: "comparison", label: "Compare FDs" },
                               { value: "laddering", label: "FD Ladder" },
-                              { value: "optimalTenure", label: "Optimal Tenure" },
-                              { value: "prematureWithdrawal", label: "Premature Withdrawal" },
+                              {
+                                value: "optimalTenure",
+                                label: "Optimal Tenure",
+                              },
+                              {
+                                value: "prematureWithdrawal",
+                                label: "Premature Withdrawal",
+                              },
                             ]}
                           />
                           {fdMode === "simple" && (
@@ -1937,9 +2087,15 @@ function CalculatorSection() {
                             value={taxMode}
                             onValueChange={setTaxMode}
                             options={[
-                              { value: "regimeComparison", label: "Compare Regimes" },
+                              {
+                                value: "regimeComparison",
+                                label: "Compare Regimes",
+                              },
                               { value: "capitalGains", label: "Capital Gains" },
-                              { value: "tdsCalculator", label: "TDS Calculator" },
+                              {
+                                value: "tdsCalculator",
+                                label: "TDS Calculator",
+                              },
                               { value: "advanceTax", label: "Advance Tax" },
                             ]}
                           />
@@ -2094,8 +2250,12 @@ function CalculatorSection() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="new">New Regime</SelectItem>
-                                    <SelectItem value="old">Old Regime</SelectItem>
+                                    <SelectItem value="new">
+                                      New Regime
+                                    </SelectItem>
+                                    <SelectItem value="old">
+                                      Old Regime
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -2169,10 +2329,19 @@ function CalculatorSection() {
                             onValueChange={setSwpMode}
                             options={[
                               { value: "standard", label: "SWP Calculator" },
-                              { value: "sustainable", label: "Sustainable Withdrawal" },
-                              { value: "perpetual", label: "Perpetual Withdrawal" },
+                              {
+                                value: "sustainable",
+                                label: "Sustainable Withdrawal",
+                              },
+                              {
+                                value: "perpetual",
+                                label: "Perpetual Withdrawal",
+                              },
                               { value: "stepUp", label: "Step-Up SWP" },
-                              { value: "swpVsFd", label: "SWP vs FD Comparison" },
+                              {
+                                value: "swpVsFd",
+                                label: "SWP vs FD Comparison",
+                              },
                             ]}
                           />
                           <div className="space-y-3">
@@ -2203,7 +2372,8 @@ function CalculatorSection() {
                             </div>
 
                             {/* Mode-specific inputs */}
-                            {(swpMode === "standard" || swpMode === "swpVsFd") && (
+                            {(swpMode === "standard" ||
+                              swpMode === "swpVsFd") && (
                               <InputWithLabel
                                 label="Monthly Withdrawal (₹)"
                                 placeholder="8000"
@@ -2258,7 +2428,10 @@ function CalculatorSection() {
                               />
                             )}
 
-                            {(swpMode === "standard" || swpMode === "sustainable" || swpMode === "stepUp" || swpMode === "swpVsFd") && (
+                            {(swpMode === "standard" ||
+                              swpMode === "sustainable" ||
+                              swpMode === "stepUp" ||
+                              swpMode === "swpVsFd") && (
                               <InputWithLabel
                                 label="Withdrawal Period (Years)"
                                 placeholder="15"
@@ -2274,7 +2447,9 @@ function CalculatorSection() {
 
                             {/* Tax Configuration */}
                             <div className="space-y-3 border-t pt-3">
-                              <Label className="text-sm font-medium">Tax Configuration</Label>
+                              <Label className="text-sm font-medium">
+                                Tax Configuration
+                              </Label>
                               <div className="grid md:grid-cols-3 gap-3">
                                 <div className="space-y-2">
                                   <Label>Investment Type</Label>
@@ -2283,7 +2458,10 @@ function CalculatorSection() {
                                     onValueChange={(value) =>
                                       setSwpData({
                                         ...swpData,
-                                        investmentType: value as "equity" | "debt" | "hybrid",
+                                        investmentType: value as
+                                          | "equity"
+                                          | "debt"
+                                          | "hybrid",
                                       })
                                     }
                                   >
@@ -2291,9 +2469,13 @@ function CalculatorSection() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="equity">Equity</SelectItem>
+                                      <SelectItem value="equity">
+                                        Equity
+                                      </SelectItem>
                                       <SelectItem value="debt">Debt</SelectItem>
-                                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                                      <SelectItem value="hybrid">
+                                        Hybrid
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -2330,8 +2512,14 @@ function CalculatorSection() {
                             value={mfMode}
                             onValueChange={setMfMode}
                             options={[
-                              { value: "lumpSum", label: "Lump Sum Calculator" },
-                              { value: "taxAdjusted", label: "Tax-Adjusted Returns" },
+                              {
+                                value: "lumpSum",
+                                label: "Lump Sum Calculator",
+                              },
+                              {
+                                value: "taxAdjusted",
+                                label: "Tax-Adjusted Returns",
+                              },
                               { value: "comparison", label: "Compare Funds" },
                             ]}
                           />
@@ -2428,7 +2616,10 @@ function CalculatorSection() {
                                     onValueChange={(value) =>
                                       setMfData({
                                         ...mfData,
-                                        fundType: value as "equity" | "debt" | "other",
+                                        fundType: value as
+                                          | "equity"
+                                          | "debt"
+                                          | "other",
                                       })
                                     }
                                   >
@@ -2436,14 +2627,21 @@ function CalculatorSection() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="equity">Equity Fund</SelectItem>
-                                      <SelectItem value="debt">Debt Fund</SelectItem>
-                                      <SelectItem value="other">Other</SelectItem>
+                                      <SelectItem value="equity">
+                                        Equity Fund
+                                      </SelectItem>
+                                      <SelectItem value="debt">
+                                        Debt Fund
+                                      </SelectItem>
+                                      <SelectItem value="other">
+                                        Other
+                                      </SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
                               </div>
-                              {(mfData.fundType === "debt" || mfData.fundType === "other") && (
+                              {(mfData.fundType === "debt" ||
+                                mfData.fundType === "other") && (
                                 <InputWithLabel
                                   label="Income Slab Rate (%)"
                                   placeholder="30"
