@@ -305,6 +305,61 @@ function CalculatorSection() {
             );
           }
         }
+      } else if (activeTab === "fd") {
+        if (!fdData.principal || !fdData.annualRate || !fdData.tenure) {
+          throw new Error(
+            "Please fill in all required fields: Principal, Annual Rate, and Tenure"
+          );
+        }
+      } else if (activeTab === "swp") {
+        if (swpMode === "standard") {
+          if (
+            !swpData.initialAmount ||
+            !swpData.monthlyWithdrawal ||
+            !swpData.annualRate ||
+            !swpData.years
+          ) {
+            throw new Error(
+              "Please fill in all required fields: Initial Amount, Monthly Withdrawal, Annual Rate, and Years"
+            );
+          }
+        } else if (swpMode === "stepUp") {
+          if (
+            !swpData.initialAmount ||
+            !swpData.initialWithdrawal ||
+            !swpData.annualRate ||
+            !swpData.years
+          ) {
+            throw new Error(
+              "Please fill in all required fields: Initial Amount, Initial Withdrawal, Annual Rate, and Years"
+            );
+          }
+        } else if (swpMode === "perpetual") {
+          if (!swpData.initialAmount || !swpData.annualRate) {
+            throw new Error(
+              "Please fill in all required fields: Initial Amount and Annual Rate"
+            );
+          }
+        }
+      } else if (activeTab === "tax") {
+        if (taxMode === "regimeComparison" && !taxData.annualIncome) {
+          throw new Error(
+            "Please fill in Annual Income for tax regime comparison"
+          );
+        } else if (
+          taxMode === "capitalGains" &&
+          (!taxData.salePrice || !taxData.purchasePrice)
+        ) {
+          throw new Error(
+            "Please fill in Sale Price and Purchase Price for capital gains calculation"
+          );
+        }
+      } else if (activeTab === "mf") {
+        if (!mfData.investment || !mfData.annualRate) {
+          throw new Error(
+            "Please fill in all required fields: Investment and Annual Rate"
+          );
+        }
       }
 
       switch (activeTab) {
@@ -610,26 +665,22 @@ function CalculatorSection() {
             // Comparison chart showing normal vs penalized maturity
             const withdrawalData = [
               {
-                name: "Normal Maturity",
-                value: result.normalMaturityAmount,
-                color: "#10b981",
-              },
-              {
-                name: "Penalized Amount",
-                value: result.penalizedMaturityAmount,
-                color: "#ef4444",
-              },
-              {
-                name: "Penalty Loss",
-                value: result.penaltyAmount + result.estimatedInterestLoss,
-                color: "#f59e0b",
+                name: "Maturity",
+                "Normal Maturity": result.normalMaturityAmount,
+                "Penalized Amount": result.penalizedMaturityAmount,
+                "Penalty Loss":
+                  result.penaltyAmount + result.estimatedInterestLoss,
               },
             ];
 
             newChartData = {
               type: "bar",
               data: withdrawalData,
-              bars: [{ key: "value", color: "#10b981" }],
+              bars: [
+                { key: "Normal Maturity", color: "#10b981" },
+                { key: "Penalized Amount", color: "#ef4444" },
+                { key: "Penalty Loss", color: "#f59e0b" },
+              ],
               xAxisKey: "name",
             };
           }
@@ -648,19 +699,17 @@ function CalculatorSection() {
               toNumber(taxData.age)
             );
 
-            // Enhanced bar chart with glowing effects
+            // Enhanced bar chart with consistent colors
             newChartData = {
               type: "bar",
               data: [
                 {
                   Regime: "Old Regime",
                   Tax: result.oldRegime.totalTax,
-                  color: "#ef4444",
                 },
                 {
                   Regime: "New Regime",
                   Tax: result.newRegime.totalTax,
-                  color: "#22c55e",
                 },
               ],
               bars: [{ key: "Tax", color: "#f97316" }],
@@ -707,23 +756,22 @@ function CalculatorSection() {
 
             // Bar chart showing TDS breakdown
             const tdsData = [
-              { name: "Annual Tax", value: result.annualTax, color: "#ef4444" },
               {
-                name: "Monthly TDS",
-                value: result.monthlyTDS * 12,
-                color: "#f59e0b",
-              },
-              {
-                name: "Net Annual Salary",
-                value: result.netAnnualSalary,
-                color: "#10b981",
+                name: "Breakdown",
+                "Annual Tax": result.annualTax,
+                "Monthly TDS": result.monthlyTDS * 12,
+                "Net Annual Salary": result.netAnnualSalary,
               },
             ];
 
             newChartData = {
               type: "bar",
               data: tdsData,
-              bars: [{ key: "value", color: "#3b82f6" }],
+              bars: [
+                { key: "Annual Tax", color: "#ef4444" },
+                { key: "Monthly TDS", color: "#f59e0b" },
+                { key: "Net Annual Salary", color: "#10b981" },
+              ],
               xAxisKey: "name",
             };
           } else if (taxMode === "advanceTax") {
@@ -788,7 +836,7 @@ function CalculatorSection() {
               toNumber(swpData.initialNAV)
             );
             const swpChartData = [];
-            for (let i = 0; i <= toNumber(swpData.years); i++) {
+            for (let i = 1; i <= toNumber(swpData.years); i++) {
               const yearResult = calculateSWP(
                 toNumber(swpData.initialAmount),
                 toNumber(swpData.monthlyWithdrawal),
@@ -894,19 +942,22 @@ function CalculatorSection() {
               swpTaxConfig
             );
 
-            // Standard withdrawal rates chart
+            // Standard withdrawal rates chart - Fixed property mapping
             const standardRates = Object.entries(
               result.standardOptions || {}
             ).map(([rate, values]: [string, any]) => ({
-              Rate: `${rate}%`,
-              "Monthly Amount": values.monthlyWithdrawal,
-              "Annual Amount": values.annualWithdrawal,
+              Rate: `${rate}`,
+              "Monthly Amount": values.netMonthly || 0,
+              "Annual Amount": values.netAnnual || 0,
             }));
 
             newChartData = {
               type: "bar",
               data: standardRates,
-              bars: [{ key: "Monthly Amount", color: "#10b981" }],
+              bars: [
+                { key: "Monthly Amount", color: "#10b981" },
+                { key: "Annual Amount", color: "#3b82f6" },
+              ],
               xAxisKey: "Rate",
             };
           } else if (swpMode === "sustainable") {
@@ -948,33 +999,6 @@ function CalculatorSection() {
               },
               xAxisKey: "name",
             };
-          } else {
-            result = calculatePerpetualWithdrawal(
-              toNumber(swpData.initialAmount),
-              toNumber(swpData.annualRate),
-              swpTaxConfig
-            );
-
-            // Bar chart showing different withdrawal rates
-            const perpetualData = Object.entries(
-              result.standardOptions || {}
-            ).map(([rate, values]: [string, any]) => ({
-              Rate: `${rate}%`,
-              "Monthly Withdrawal": values.monthlyWithdrawal,
-              "Annual Withdrawal": values.annualWithdrawal,
-            }));
-
-            if (perpetualData.length > 0) {
-              newChartData = {
-                type: "bar",
-                data: perpetualData,
-                bars: [
-                  { key: "Monthly Withdrawal", color: "#f59e0b" },
-                  { key: "Annual Withdrawal", color: "#10b981" },
-                ],
-                xAxisKey: "Rate",
-              };
-            }
           }
           break;
         case "mf":
@@ -988,7 +1012,7 @@ function CalculatorSection() {
 
             // Area chart showing growth over time
             const growthData = [];
-            for (let i = 0; i <= toNumber(mfData.years); i++) {
+            for (let i = 1; i <= toNumber(mfData.years); i++) {
               const yearResult = calculateReturnsWithExpenses(
                 toNumber(mfData.investment),
                 toNumber(mfData.annualRate),
@@ -1264,24 +1288,27 @@ function CalculatorSection() {
     switch (activeTab) {
       case "sip":
         return (
-          <div className="space-y-3">
+          <div>
             {results.futureValue !== undefined ? (
-              <>
+              <div className="flex gap-3">
                 <ResultCard
                   label="Total Invested"
                   value={`₹${results.totalInvested?.toLocaleString()}`}
+                  horizontal={true}
                 />
                 <ResultCard
                   label="Wealth Gained"
                   value={`₹${results.wealthGained?.toLocaleString()}`}
                   isPrimary
+                  horizontal={true}
                 />
                 <ResultCard
                   label="Future Value"
                   value={`₹${results.futureValue?.toLocaleString()}`}
                   isLarge
+                  horizontal={true}
                 />
-              </>
+              </div>
             ) : (
               <ResultCard
                 label="Required Monthly SIP"
@@ -1295,20 +1322,23 @@ function CalculatorSection() {
       case "fd":
         if (results.maturityAmount !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Net Maturity Amount"
                 value={`₹${results.netMaturityAmount?.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Total Interest"
                 value={`₹${results.netInterest?.toLocaleString()}`}
                 isPrimary
+                horizontal
               />
               <ResultCard
                 label="Total TDS Deducted"
                 value={`₹${results.totalTDS?.toLocaleString()}`}
+                horizontal
               />
             </div>
           );
@@ -1427,43 +1457,50 @@ function CalculatorSection() {
           );
         if (results.bestOption)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Best Tenure"
                 value={results.bestOption.tenureRange}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Annualized Return"
                 value={`${results.bestOption.annualizedReturn}%`}
                 isPrimary
+                horizontal
               />
               <ResultCard
                 label="Maturity Amount"
                 value={`₹${results.bestOption.maturityAmount.toLocaleString()}`}
+                horizontal
               />
             </div>
           );
         if (results.penalizedMaturityAmount !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Normal Maturity"
                 value={`₹${results.normalMaturityAmount.toLocaleString()}`}
+                horizontal
               />
               <ResultCard
                 label="Penalized Amount"
                 value={`₹${results.penalizedMaturityAmount.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Total Penalty"
                 value={`₹${results.penaltyAmount.toLocaleString()}`}
                 isPrimary
+                horizontal
               />
               <ResultCard
                 label="Interest Loss"
                 value={`₹${results.estimatedInterestLoss.toLocaleString()}`}
+                horizontal
               />
             </div>
           );
@@ -1472,62 +1509,72 @@ function CalculatorSection() {
       case "tax":
         if (results.betterRegime)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label={`Better Regime: ${results.betterRegime}`}
                 value={`Saves ₹${results.taxSavings.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Tax (New Regime)"
                 value={`₹${results.newRegime.totalTax.toLocaleString()}`}
+                horizontal
               />
               <ResultCard
                 label="Tax (Old Regime)"
                 value={`₹${results.oldRegime.totalTax.toLocaleString()}`}
                 isPrimary
+                horizontal
               />
             </div>
           );
         if (results.capitalGain !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Capital Gains Tax"
                 value={`₹${results.tax.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Net Gain"
                 value={`₹${results.netGain.toLocaleString()}`}
                 isPrimary
+                horizontal
               />
               <ResultCard
                 label={`Type: ${results.gainType}`}
                 value={`Rate: ${results.taxRate}%`}
+                horizontal
               />
             </div>
           );
         if (results.monthlyTDS !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Monthly TDS"
                 value={`₹${results.monthlyTDS.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Annual Tax"
                 value={`₹${results.annualTax.toLocaleString()}`}
+                horizontal
               />
               <ResultCard
                 label="Net Monthly Salary"
                 value={`₹${results.netMonthlySalary.toLocaleString()}`}
                 isPrimary
+                horizontal
               />
               <ResultCard
                 label="TDS Percentage"
                 value={`${results.tdsPercentage}%`}
+                horizontal
               />
             </div>
           );
@@ -1605,38 +1652,45 @@ function CalculatorSection() {
         if (results.finalBalance !== undefined)
           return (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="flex flex-wrap gap-3 justify-between">
                 <ResultCard
                   label="Final Balance"
                   value={`₹${results.finalBalance.toLocaleString()}`}
                   isLarge
+                  horizontal
                 />
                 <ResultCard
                   label="Total Withdrawn"
                   value={`₹${results.totalWithdrawn.toLocaleString()}`}
                   isPrimary
+                  horizontal
                 />
                 <ResultCard
                   label="Corpus Lasts For"
                   value={`${results.yearsUntilDepletion} years`}
+                  horizontal
                 />
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="flex flex-wrap gap-3 justify-between">
                 <ResultCard
                   label="Tax Deducted"
                   value={`₹${results.totalTaxDeducted?.toLocaleString() || 0}`}
+                  horizontal
                 />
                 <ResultCard
                   label="Avg Monthly Tax"
                   value={`₹${results.averageMonthlyTax?.toLocaleString() || 0}`}
+                  horizontal
                 />
                 <ResultCard
                   label="Effective Rate"
                   value={`${results.effectiveWithdrawalRate?.toFixed(2) || 0}%`}
+                  horizontal
                 />
                 <ResultCard
                   label="Is Perpetual"
                   value={results.isPerpetual ? "Yes" : "No"}
+                  horizontal
                 />
               </div>
             </div>
@@ -1646,20 +1700,23 @@ function CalculatorSection() {
         if (results.finalWithdrawalAmount !== undefined)
           return (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="flex flex-wrap gap-3 justify-between">
                 <ResultCard
                   label="Final Balance"
                   value={`₹${results.finalBalance.toLocaleString()}`}
                   isLarge
+                  horizontal
                 />
                 <ResultCard
                   label="Total Withdrawn"
                   value={`₹${results.totalWithdrawn.toLocaleString()}`}
                   isPrimary
+                  horizontal
                 />
                 <ResultCard
                   label="Final Withdrawal"
                   value={`₹${results.finalWithdrawalAmount.toLocaleString()}`}
+                  horizontal
                 />
               </div>
               {results.yearWiseBreakdown && (
@@ -1841,14 +1898,10 @@ function CalculatorSection() {
                       <TableRow key={rate}>
                         <TableCell className="font-medium">{rate}%</TableCell>
                         <TableCell>
-                          ₹
-                          {values.monthlyWithdrawal?.toLocaleString() ||
-                            values.netMonthly?.toLocaleString()}
+                          ₹{values.netMonthly?.toLocaleString() || 0}
                         </TableCell>
                         <TableCell>
-                          ₹
-                          {values.annualWithdrawal?.toLocaleString() ||
-                            values.netAnnual?.toLocaleString()}
+                          ₹{values.netAnnual?.toLocaleString() || 0}
                         </TableCell>
                         <TableCell className="text-red-600">
                           ₹{values.taxImpact?.toLocaleString() || 0}
@@ -1884,20 +1937,23 @@ function CalculatorSection() {
       case "mf":
         if (results.netFutureValue !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Net Value (After Expenses)"
                 value={`₹${results.netFutureValue.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label="Expense Impact"
                 value={`₹${results.expenseImpact.toLocaleString()}`}
+                horizontal
               />
               <ResultCard
                 label="Net Return Rate"
                 value={`${results.netReturn}%`}
                 isPrimary
+                horizontal
               />
             </div>
           );
@@ -1959,24 +2015,28 @@ function CalculatorSection() {
           );
         if (results.postTaxValue !== undefined)
           return (
-            <div className="space-y-3">
+            <div className="flex flex-wrap gap-3 justify-between">
               <ResultCard
                 label="Pre-Tax Value"
                 value={`₹${results.preTaxValue.toLocaleString()}`}
+                horizontal
               />
               <ResultCard
                 label="Tax Liability"
                 value={`₹${results.taxLiability.toLocaleString()}`}
+                horizontal
               />
               <ResultCard
                 label="Post-Tax Value"
                 value={`₹${results.postTaxValue.toLocaleString()}`}
                 isLarge
+                horizontal
               />
               <ResultCard
                 label={`Tax Rate: ${results.applicableTaxRate}%`}
                 value={`Type: ${results.taxType}`}
                 isPrimary
+                horizontal
               />
             </div>
           );
@@ -4070,13 +4130,20 @@ const ResultCard = ({
   value,
   isPrimary = false,
   isLarge = false,
+  horizontal = false,
 }: {
   label: string;
   value: string;
   isPrimary?: boolean;
   isLarge?: boolean;
+  horizontal?: boolean;
 }) => (
-  <div className="glass-strong rounded-lg p-3 border border-border/20 text-center">
+  <div
+    className={cn(
+      "glass-strong rounded-lg p-3 border border-border/20",
+      horizontal ? "text-center flex-1" : "text-center"
+    )}
+  >
     <div className="text-xs text-muted-foreground mb-1">{label}</div>
     <div
       className={cn(
